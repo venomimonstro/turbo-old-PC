@@ -207,6 +207,7 @@ Add-Type -AssemblyName WindowsBase
        <WrapPanel Grid.Row="2">
         <Button x:Name="BtnTempPreview" Style="{StaticResource ActionButton}" Content="Посчитать мусор"/>
         <Button x:Name="BtnTempClean" Style="{StaticResource ActionButton}" Content="Очистить с подтверждением" IsEnabled="False"/>
+        <Button x:Name="BtnStorageSense" Style="{StaticResource ActionButton}" Content="Очистка Windows"/>
        </WrapPanel>
        <TextBox x:Name="CleanupText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Text="Пока ничего не удалено. Сначала посчитайте объём."/>
@@ -237,8 +238,11 @@ Add-Type -AssemblyName WindowsBase
        <TextBlock Grid.Row="3" Margin="0,14,0,10" FontSize="16" FontWeight="SemiBold"
         Text="Дополнительные службы для ручной оценки"/>
        <DataGrid x:Name="ServiceGrid" Grid.Row="4"/>
-       <Button x:Name="BtnServices" Grid.Row="5" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Margin="0,12,0,0"
-        Content="Просмотреть службы Windows"/>
+       <WrapPanel Grid.Row="5" Margin="0,12,0,0">
+        <Button x:Name="BtnServices" Style="{StaticResource ActionButton}" Content="Службы Windows"/>
+        <Button x:Name="BtnVisualEffects" Style="{StaticResource ActionButton}" Content="Визуальные эффекты"/>
+        <Button x:Name="BtnPowerPlan" Style="{StaticResource ActionButton}" Content="Электропитание"/>
+       </WrapPanel>
       </Grid>
      </Border>
     </TabItem>
@@ -292,7 +296,7 @@ if (Test-Path -LiteralPath $iconPath -PathType Leaf) {
 $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
-    'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnTempPreview','BtnTempClean','CleanupText',
+    'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
     'BtnScan','BtnScanFull','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
@@ -529,6 +533,9 @@ $script:ui['BtnScanFull'].Add_Click({
 $script:ui['BtnStartupSettings'].Add_Click({ Open-TurboShell 'ms-settings:startupapps' 'taskmgr.exe' })
 $script:ui['BtnAppsSettings'].Add_Click({ Open-TurboShell 'ms-settings:appsfeatures' 'appwiz.cpl' })
 $script:ui['BtnServices'].Add_Click({ Open-TurboShell 'services.msc' })
+$script:ui['BtnVisualEffects'].Add_Click({ Open-TurboShell 'SystemPropertiesPerformance.exe' })
+$script:ui['BtnPowerPlan'].Add_Click({ Open-TurboShell 'powercfg.cpl' })
+$script:ui['BtnStorageSense'].Add_Click({ Open-TurboShell 'ms-settings:storagepolicies' 'cleanmgr.exe' })
 $script:ui['BtnDriversUpdate'].Add_Click({ Open-TurboShell 'ms-settings:windowsupdate-optionalupdates' 'ms-settings:windowsupdate' })
 $script:ui['BtnDeviceManager'].Add_Click({ Open-TurboShell 'devmgmt.msc' })
 $script:ui['BtnWindowsSecurity'].Add_Click({ Open-TurboShell 'windowsdefender:' 'ms-settings:windowsdefender' })
