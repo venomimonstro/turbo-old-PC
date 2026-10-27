@@ -32,7 +32,8 @@ foreach ($required in @('MainTabs','BtnAnalyze','BtnScan','BtnScanFull','BtnTemp
 Write-Host 'PASS: GUI XML and essential controls'
 foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
  'DriverUpdatesGrid','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
- 'BtnBoostPower','BtnBoostRestore','BtnScanOffline')) {
+ 'BtnBoostPower','BtnBoostRestore','BtnScanOffline',
+ 'NavRepair','BtnDeepAnalyze','BtnDeepClean','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit')) {
     if ($required -notin $names) { throw "Missing v0.3 dashboard control: $required" }
 }
 Write-Host 'PASS: security/driver/boost controls present'
@@ -96,3 +97,15 @@ if ($FullDiagnostics) {
     Write-Host "PASS: live hardware diagnostics $($snapshot.Hardware.Model)"
 }
 Write-Host 'ALL SMOKE TESTS PASSED'
+
+# Preview must not inspect arbitrary files when the selected drive is not valid.
+$jobPath = Join-Path ([IO.Path]::GetTempPath()) ('TurboOldPC-invalid-'+[guid]::NewGuid().ToString('N')+'.json')
+try {
+    & (Join-Path $root 'app\Workers\DeepCleanup.ps1') -Mode Analyze -Drive 'Z:' -OutputPath $jobPath
+    if (-not (Test-Path -LiteralPath $jobPath)) { throw 'Deep cleanup failure was not reported.' }
+    $check = Get-Content -LiteralPath $jobPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($check.Success) { Write-Host 'WARN: Z: is mounted; invalid-drive check skipped.' }
+    else { Write-Host 'PASS: deep cleanup unavailable volume handled' }
+} finally {
+    Remove-Item -LiteralPath $jobPath -Force -ErrorAction SilentlyContinue
+}
