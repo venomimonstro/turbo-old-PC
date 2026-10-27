@@ -221,6 +221,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnSpaceMap" Style="{StaticResource ActionButton}" Content="Куда ушло место?"/>
         <Button x:Name="BtnDeepClean" Style="{StaticResource ActionButton}" Content="Удалить найденное" IsEnabled="False"/>
         <Button x:Name="BtnStorageSense" Style="{StaticResource ActionButton}" Content="Очистка Windows"/>
+        <Button x:Name="BtnDiskCleanupWizard" Style="{StaticResource ActionButton}" Content="Расширенная очистка Windows"/>
        </WrapPanel>
        <TextBox x:Name="CleanupText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Text="Пока ничего не удалено. Сначала посчитайте объём."/>
@@ -380,7 +381,7 @@ if (Test-Path -LiteralPath $iconPath -PathType Leaf) {
 $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
-    'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
+    'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnDiskCleanupWizard','BtnTempClean','CleanupText',
     'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall','BtnCancelWorker')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
@@ -774,6 +775,20 @@ $script:ui['BtnSpaceMap'].Add_Click({
     if($drive -notmatch '^[A-Za-z]:$'){Show-TurboError 'Введите букву диска, например C:';return}
     $script:selectedDisk=$drive.ToUpperInvariant()
     Start-TurboWorker 'Карта диска' 'Workers\SpaceMap.ps1' ('-Drive '+$script:selectedDisk)
+})
+$script:ui['BtnDiskCleanupWizard'].Add_Click({
+    $letter=$script:selectedDisk
+    if($letter -notmatch '^[A-Za-z]:$'){$letter=$env:SystemDrive}
+    $wizard=Join-Path $env:SystemRoot 'System32\cleanmgr.exe'
+    if(-not (Test-Path -LiteralPath $wizard -PathType Leaf)){
+        Show-TurboError 'Утилита cleanmgr отсутствует. Откройте «Параметры → Система → Память устройства».'
+        return
+    }
+    [void][Windows.MessageBox]::Show($script:window,
+        'Откроется штатная очистка диска Windows. Просмотрите категории перед удалением: некоторые категории, включая предыдущие установки Windows, могут быть нужны для восстановления.',
+        'Расширенная очистка Windows','OK','Information')
+    try{Start-Process -FilePath $wizard -ArgumentList ('/d '+$letter) -ErrorAction Stop}
+    catch{Show-TurboError "Не удалось открыть мастер очистки: $($_.Exception.Message)"}
 })
 $script:ui['BtnDeepAnalyze'].Add_Click({
     $choice = [Microsoft.VisualBasic.Interaction]::InputBox('Буква диска для анализа (например C:):','Глубокая очистка',$script:selectedDisk)
