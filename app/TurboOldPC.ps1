@@ -342,7 +342,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnRepairDism" Style="{StaticResource ActionButton}" Content="Восстановить через DISM"/>
         <Button x:Name="BtnRepairSfc" Style="{StaticResource ActionButton}" Content="Проверить и исправить SFC"/>
        </WrapPanel>
-       <WrapPanel Grid.Row="3" Margin="0,14,0,12"><Button x:Name="BtnRegistryAudit" Style="{StaticResource ActionButton}" Content="Аудит автозапуска в реестре"/></WrapPanel>
+       <WrapPanel Grid.Row="3" Margin="0,14,0,12"><Button x:Name="BtnRegistryAudit" Style="{StaticResource ActionButton}" Content="Аудит автозапуска в реестре"/><Button x:Name="BtnRestorePoints" Style="{StaticResource ActionButton}" Content="Точки восстановления"/><Button x:Name="BtnRestoreWizard" Style="{StaticResource ActionButton}" Content="Мастер отката Windows"/></WrapPanel>
        <TextBox x:Name="RepairText" Grid.Row="4" IsReadOnly="True" Background="#FAFCFC" VerticalScrollBarVisibility="Auto"
         TextWrapping="Wrap" Text="Выберите проверку. Результаты сохраняются локально."/>
       </Grid>
@@ -372,7 +372,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -623,6 +623,12 @@ $script:timer.Add_Tick({
                 $script:ui['BtnDeepClean'].IsEnabled = $false
                 Set-TurboStatus ([string]$result.Message)
             }
+            'Точки восстановления' {
+                $items=@($result.Points|ForEach-Object{ "$($_.Sequence) — $($_.Created) — $($_.Description)" })
+                if($items.Count -eq 0){$items=@('Точек восстановления нет. Проверьте защиту системы.')}
+                $script:ui['RepairText'].Text=$items -join [Environment]::NewLine
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Аудит реестра' {
                 $lines = @($result.Entries | ForEach-Object { "$($_.Status): $($_.Name) — $($_.Command)" })
                 $script:ui['RepairText'].Text = $lines -join [Environment]::NewLine
@@ -707,6 +713,8 @@ $script:ui['BtnScanOffline'].Add_Click({
 $script:ui['BtnSecondOpinion'].Add_Click({
     Open-TurboShell 'https://learn.microsoft.com/en-us/defender-endpoint/safety-scanner-download'
 })
+$script:ui['BtnRestorePoints'].Add_Click({ Start-TurboWorker 'Точки восстановления' 'Workers\RestorePoints.ps1' })
+$script:ui['BtnRestoreWizard'].Add_Click({ Open-TurboShell 'rstrui.exe' })
 $script:ui['BtnRegistryAudit'].Add_Click({ Start-TurboWorker 'Аудит реестра' 'Workers\RegistryAudit.ps1' })
 $script:ui['BtnSpaceMap'].Add_Click({
     $drive=[Microsoft.VisualBasic.Interaction]::InputBox('Буква диска для карты занятого места:','Карта диска',$script:selectedDisk)
