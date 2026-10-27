@@ -101,6 +101,23 @@ Add-Type -AssemblyName WindowsBase
              Content="Удаление приложений Windows"/>
     </Grid>
    </TabItem>
+   <TabItem Header="Ресурсы">
+    <Grid Margin="13">
+     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/><RowDefinition Height="2*"/>
+      <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+     </Grid.RowDefinitions>
+     <TextBlock Margin="0,0,0,7" TextWrapping="Wrap"
+       Text="Процессы по объёму RAM. CPU — суммарное процессорное время, не текущая загрузка."/>
+     <DataGrid x:Name="ProcessesGrid" Grid.Row="1"/>
+     <TextBlock Grid.Row="2" Margin="0,12,0,7" TextWrapping="Wrap"
+       Text="Автозапускаемые сторонние службы (предварительная оценка). Не отключайте антивирусы и драйверные службы."/>
+     <DataGrid x:Name="ServiceGrid" Grid.Row="3"/>
+     <Button x:Name="BtnServices" Grid.Row="4" Margin="0,10,0,0" HorizontalAlignment="Left"
+       Content="Посмотреть службы Windows"/>
+    </Grid>
+   </TabItem>
    <TabItem Header="Очистка">
     <StackPanel Margin="17">
      <TextBlock Text="Временные файлы пользователя" FontSize="19" FontWeight="SemiBold"/>
@@ -141,7 +158,7 @@ $script:window = [Windows.Markup.XamlReader]::Load($reader)
 $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
-    'SoftwareGrid','BtnAppsSettings','BtnTempPreview','BtnTempClean','CleanupText',
+    'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnTempPreview','BtnTempClean','CleanupText',
     'BtnScan','BtnWindowsSecurity','SecurityText','StatusText')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
@@ -192,7 +209,7 @@ function Format-TurboReport($snap) {
         $h = $snap.Hardware
         $lines.Add('Ноутбук: ' + $h.Manufacturer + ' ' + $h.Model)
         $lines.Add('CPU: ' + $h.CPU + '; ядра: ' + $h.Cores)
-        $lines.Add('RAM: ' + $h.MemoryGb + ' ГБ')
+        $lines.Add('RAM: ' + $h.MemoryGb + ' ГБ; свободно при проверке: ' + $h.FreeMemoryGb + ' ГБ')
         $lines.Add('ОС: ' + $h.Windows + ' ' + $h.Version)
         $lines.Add('Системный накопитель: ' + $h.Disk + ' / ' + $h.DiskType + ' / ' + $h.DiskBus)
         $lines.Add('Свободно на ' + $h.SystemDrive + ': ' + $h.FreeGb + ' из ' + $h.TotalGb + ' ГБ')
@@ -214,6 +231,12 @@ function Format-TurboReport($snap) {
     $lines.Add('ЧТО СДЕЛАТЬ:')
     foreach ($x in @($snap.Recommendations)) { $lines.Add('• ' + [string]$x) }
     $lines.Add('')
+    $lines.Add('САМЫЕ КРУПНЫЕ ПРОЦЕССЫ ПО RAM (CPU — накопленное время):')
+    foreach ($x in @($snap.Processes)) { $lines.Add("$($x.Name) | RAM $($x.RamMb) МБ | CPU $($x.CpuTotalSeconds) с") }
+    $lines.Add('')
+    $lines.Add('СТОРОННИЕ АВТОМАТИЧЕСКИЕ СЛУЖБЫ, ТОЛЬКО ДЛЯ АНАЛИЗА:')
+    foreach ($x in @($snap.ServiceAudit)) { $lines.Add("$($x.DisplayName) | $($x.Name) | $($x.Executable)") }
+    $lines.Add('')
     $lines.Add('АВТОЗАГРУЗКА:')
     foreach ($x in @($snap.Startup)) { $lines.Add("$($x.Name) | $($x.Command) | $($x.Location)") }
     $lines.Add('')
@@ -232,6 +255,8 @@ function Show-TurboSnapshot($snap) {
     $script:ui['StartupGrid'].ItemsSource = @($snap.Startup)
     $script:ui['DriversGrid'].ItemsSource = @($snap.DriverProblems)
     $script:ui['SoftwareGrid'].ItemsSource = @($snap.Software)
+    $script:ui['ProcessesGrid'].ItemsSource = @($snap.Processes)
+    $script:ui['ServiceGrid'].ItemsSource = @($snap.ServiceAudit)
 }
 function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$extraParams = '') {
     if ($null -ne $script:activeProcess -and -not $script:activeProcess.HasExited) {
@@ -329,6 +354,7 @@ $script:ui['BtnScan'].Add_Click({
 })
 $script:ui['BtnStartupSettings'].Add_Click({ Open-TurboShell 'ms-settings:startupapps' 'taskmgr.exe' })
 $script:ui['BtnAppsSettings'].Add_Click({ Open-TurboShell 'ms-settings:appsfeatures' 'appwiz.cpl' })
+$script:ui['BtnServices'].Add_Click({ Open-TurboShell 'services.msc' })
 $script:ui['BtnDriversUpdate'].Add_Click({ Open-TurboShell 'ms-settings:windowsupdate-optionalupdates' 'ms-settings:windowsupdate' })
 $script:ui['BtnDeviceManager'].Add_Click({ Open-TurboShell 'devmgmt.msc' })
 $script:ui['BtnWindowsSecurity'].Add_Click({ Open-TurboShell 'windowsdefender:' 'ms-settings:windowsdefender' })
