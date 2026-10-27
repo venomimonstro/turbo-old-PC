@@ -9,7 +9,8 @@ try{
  if($Mode -eq 'Scan'){
   if(-not $ScanRoot){throw 'Выберите папку для проверки.'}
   $scan=Invoke-TurboFileScan -Root $ScanRoot -DatabasePath $db
-  $result=[pscustomobject]@{Success=$true;Mode=$Mode;Scan=$scan;Message="Проверено файлов: $($scan.Scanned). Сигнатур: $($scan.Signatures). Совпадений: $(@($scan.Findings).Count). Сканер экспериментальный, проверяет только точные хеши; отсутствие совпадений НЕ означает безопасность."}
+  $limitText=if($scan.Truncated){' Проверка прервана лимитами времени, числа файлов или общего объёма. Часть объектов не исследована.'}else{''}
+  $result=[pscustomobject]@{Success=$true;Mode=$Mode;Scan=$scan;Message="Проверено файлов: $($scan.Scanned), $([math]::Round([double]$scan.HashedBytes/1MB,1)) МБ за $($scan.ElapsedSeconds) с. Ошибок чтения: $($scan.Errors). Сигнатур: $($scan.Signatures). Совпадений: $(@($scan.Findings).Count).$limitText Сканер экспериментальный, проверяет только точные хеши; отсутствие совпадений НЕ означает безопасность."}
  }else{
   if($ExpectedHash -notmatch '^[A-Fa-f0-9]{64}$' -or -not $FindingPath){throw 'Недействительное подтверждение обнаружения.'}
   $allowed=Get-TurboSignatureDatabase -DatabasePath $db
