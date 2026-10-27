@@ -272,6 +272,7 @@ Add-Type -AssemblyName WindowsBase
         <DataGrid x:Name="DriverUpdatesGrid" Grid.Row="3" SelectionMode="Single"/>
        </Grid>
        <WrapPanel Grid.Row="3" Margin="0,12,0,0">
+        <Button x:Name="BtnDriverInventory" Style="{StaticResource ActionButton}" Content="Установленные драйверы"/>
         <Button x:Name="BtnDriverSearch" Style="{StaticResource ActionButton}" Content="Найти драйверы"/>
         <Button x:Name="BtnDriverInstall" Style="{StaticResource ActionButton}" Content="Установить выбранный" IsEnabled="False"/>
         <Button x:Name="BtnDriversUpdate" Style="{StaticResource ActionButton}" Content="Windows Update"/>
@@ -371,7 +372,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -572,6 +573,10 @@ $script:timer.Add_Tick({
                 $script:ui['SecurityGrid'].ItemsSource = @($result.Checks)
                 Set-TurboStatus ([string]$result.Message)
             }
+            'Инвентаризация драйверов' {
+                $script:ui['DriversGrid'].ItemsSource = @($result.Drivers)
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Поиск драйверов' {
                 $script:ui['DriverUpdatesGrid'].ItemsSource = @($result.Updates)
                 $script:ui['BtnDriverInstall'].IsEnabled = $false
@@ -747,6 +752,7 @@ $script:ui['BtnDriversUpdate'].Add_Click({ Open-TurboShell 'ms-settings:windowsu
 $script:ui['BtnSecurityAudit'].Add_Click({ Start-TurboWorker 'Аудит защиты' 'Workers\SecurityAudit.ps1' })
 $script:ui['BtnRansomware'].Add_Click({ Open-TurboShell 'windowsdefender:' 'ms-settings:windowsdefender' })
 $script:ui['BtnSecurityUpdates'].Add_Click({ Open-TurboShell 'ms-settings:windowsupdate' })
+$script:ui['BtnDriverInventory'].Add_Click({ Start-TurboWorker 'Инвентаризация драйверов' 'Workers\DriverInventory.ps1' })
 $script:ui['BtnDriverSearch'].Add_Click({
     $script:ui['DriverUpdatesGrid'].ItemsSource = $null
     $script:ui['BtnDriverInstall'].IsEnabled = $false
