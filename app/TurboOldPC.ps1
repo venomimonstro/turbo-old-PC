@@ -123,7 +123,7 @@ Add-Type -AssemblyName WindowsBase
     </StackPanel>
     <StackPanel Grid.Row="2" Margin="22,0,15,22">
      <Border Height="1" Background="#3A6765" Margin="0,0,0,15"/>
-     <TextBlock Text="0.2.0  •  Без рекламы" Foreground="#B4D8CF" FontSize="12"/>
+     <TextBlock Text="0.3.0  •  Без рекламы" Foreground="#B4D8CF" FontSize="12"/>
      <TextBlock Text="Личные файлы не передаются" Foreground="#84AFA6" FontSize="11" Margin="0,6,0,0"/>
     </StackPanel>
    </Grid>
