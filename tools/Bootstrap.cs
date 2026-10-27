@@ -55,6 +55,10 @@ internal static class Bootstrap
                     var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (ZipArchiveEntry entry in archive.Entries)
                     {
+                        // Never materialize symbolic links or special Unix files from embedded ZIPs.
+                        int unixMode = (entry.ExternalAttributes >> 16) & 0xF000;
+                        if (unixMode == 0xA000 || unixMode == 0x6000 || unixMode == 0x2000)
+                            throw new InvalidDataException("Unsafe special-file ZIP entry.");
                         string name = entry.FullName.Replace('/', '\\');
                         if (name.Length == 0 || name.StartsWith("\\", StringComparison.Ordinal) ||
                             name.Contains(":") || name.IndexOfAny(new char[] { '\0' }) >= 0 ||
