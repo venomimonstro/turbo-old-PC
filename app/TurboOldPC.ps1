@@ -120,6 +120,7 @@ Add-Type -AssemblyName WindowsBase
      <Button x:Name="NavApps" Style="{StaticResource SideButton}" Content="▦   Программы"/>
      <Button x:Name="NavAudit" Style="{StaticResource SideButton}" Content="◉   Уязвимости"/>
      <Button x:Name="NavBoost" Style="{StaticResource SideButton}" Content="⚡   Турбо-режим"/>
+     <Button x:Name="NavRepair" Style="{StaticResource SideButton}" Content="✚   Починка Windows"/>
     </StackPanel>
     <StackPanel Grid.Row="2" Margin="22,0,15,22">
      <Border Height="1" Background="#3A6765" Margin="0,0,0,15"/>
@@ -211,6 +212,8 @@ Add-Type -AssemblyName WindowsBase
        <WrapPanel Grid.Row="2">
         <Button x:Name="BtnTempPreview" Style="{StaticResource ActionButton}" Content="Посчитать мусор"/>
         <Button x:Name="BtnTempClean" Style="{StaticResource ActionButton}" Content="Очистить с подтверждением" IsEnabled="False"/>
+        <Button x:Name="BtnDeepAnalyze" Style="{StaticResource ActionButton}" Content="Глубокий анализ диска"/>
+        <Button x:Name="BtnDeepClean" Style="{StaticResource ActionButton}" Content="Удалить найденное" IsEnabled="False"/>
         <Button x:Name="BtnStorageSense" Style="{StaticResource ActionButton}" Content="Очистка Windows"/>
        </WrapPanel>
        <TextBox x:Name="CleanupText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
@@ -322,6 +325,24 @@ Add-Type -AssemblyName WindowsBase
       </Grid>
      </Border>
     </TabItem>
+    <TabItem Header="Починка Windows">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="Восстановление системных компонентов" FontSize="21" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" Margin="0,10,0,14" Foreground="#5A6F7C" TextWrapping="Wrap"
+         Text="Используются только штатные DISM и SFC. Требуются права администратора. Исправление может занять длительное время и потребовать перезапуска."/>
+       <WrapPanel Grid.Row="2">
+        <Button x:Name="BtnRepairAudit" Style="{StaticResource ActionButton}" Content="Проверить хранилище компонентов"/>
+        <Button x:Name="BtnRepairDism" Style="{StaticResource ActionButton}" Content="Восстановить через DISM"/>
+        <Button x:Name="BtnRepairSfc" Style="{StaticResource ActionButton}" Content="Проверить и исправить SFC"/>
+       </WrapPanel>
+       <TextBlock Grid.Row="3" Text="Очистка и починка реестра: только диагностика ссылок автозапуска, без опасного массового удаления." TextWrapping="Wrap" Margin="0,14,0,12"/>
+       <TextBox x:Name="RepairText" Grid.Row="4" IsReadOnly="True" Background="#FAFCFC" VerticalScrollBarVisibility="Auto"
+        TextWrapping="Wrap" Text="Выберите проверку. Результаты сохраняются локально."/>
+      </Grid>
+     </Border>
+    </TabItem>
    </TabControl>
    <Grid Grid.Row="2" Margin="0,13,0,0">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -335,6 +356,7 @@ Add-Type -AssemblyName WindowsBase
  </Grid>
 </Window>
 '@
+Add-Type -AssemblyName Microsoft.VisualBasic
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $script:window = [Windows.Markup.XamlReader]::Load($reader)
 $iconPath = Join-Path $PSScriptRoot '..\assets\TurboOldPC.ico'
@@ -345,7 +367,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -354,6 +376,8 @@ $script:activeProcess = $null
 $script:activeOp = ''
 $script:activeResultPath = ''
 $script:tempPreviewDone = $false
+$script:deepManifest = ''
+$script:selectedDisk = [string]$env:SystemDrive
 $script:appDataDir = Join-Path $env:LOCALAPPDATA 'TurboOldPC'
 $script:reportsDir = Join-Path $script:appDataDir 'Reports'
 $script:jobsDir = Join-Path $script:appDataDir 'Jobs'
@@ -549,6 +573,25 @@ $script:timer.Add_Tick({
                 $script:ui['BoostText'].Text = [string]$result.Message
                 Set-TurboStatus ([string]$result.Message)
             }
+            'Глубокий анализ' {
+                $script:deepManifest = [string]$result.ManifestPath
+                $mb = [math]::Round(([double]$result.Bytes / 1MB),1)
+                $categories = @($result.Groups | ForEach-Object { "$($_.Category): $([math]::Round(([double]$_.Bytes/1MB),1)) МБ ($($_.Files) файлов)" })
+                $script:ui['CleanupText'].Text = "Выбран диск: $($result.Drive). Найдено: $mb МБ." + [Environment]::NewLine + ($categories -join [Environment]::NewLine)
+                $script:ui['BtnDeepClean'].IsEnabled = ($result.Count -gt 0)
+                Set-TurboStatus ([string]$result.Message)
+            }
+            'Глубокая очистка' {
+                $mb = [math]::Round(([double]$result.Bytes / 1MB),1)
+                $script:ui['CleanupText'].Text = "Удалено $($result.Deleted) файлов. Пропущено: $($result.Skipped). Освобождено около $mb МБ."
+                $script:deepManifest = ''
+                $script:ui['BtnDeepClean'].IsEnabled = $false
+                Set-TurboStatus ([string]$result.Message)
+            }
+            'Починка Windows' {
+                $script:ui['RepairText'].Text = [string]$result.Message
+                Set-TurboStatus ([string]$result.Message)
+            }
             'История бустов' {
                 $items = @($result.History | ForEach-Object { "$($_.Date): $($_.Profile) — $($_.Status)" })
                 $script:ui['BoostText'].Text = ($items -join [Environment]::NewLine)
@@ -581,7 +624,7 @@ $script:ui['BtnTempClean'].Add_Click({
 $navigation = @(
     @('NavHome',0), @('NavSecurity',1), @('NavCleanup',2),
     @('NavStartup',3), @('NavPerformance',4), @('NavDrivers',5), @('NavApps',6),
-    @('NavAudit',7), @('NavBoost',8)
+    @('NavAudit',7), @('NavBoost',8), @('NavRepair',9)
 )
 foreach ($pair in $navigation) {
     $item = $pair
@@ -616,6 +659,34 @@ $script:ui['BtnScanOffline'].Add_Click({
 $script:ui['BtnSecondOpinion'].Add_Click({
     Open-TurboShell 'https://learn.microsoft.com/en-us/defender-endpoint/safety-scanner-download'
 })
+$script:ui['BtnDeepAnalyze'].Add_Click({
+    $choice = [Microsoft.VisualBasic.Interaction]::InputBox('Буква диска для анализа (например C:):','Глубокая очистка',$script:selectedDisk)
+    if ($choice -notmatch '^[A-Za-z]:$') { Show-TurboError 'Введите только букву диска: C: или D:'; return }
+    $script:selectedDisk = $choice.ToUpperInvariant()
+    $script:deepManifest = ''
+    $script:ui['BtnDeepClean'].IsEnabled = $false
+    Start-TurboWorker 'Глубокий анализ' 'Workers\DeepCleanup.ps1' ("-Mode Analyze -Drive " + $script:selectedDisk)
+})
+$script:ui['BtnDeepClean'].Add_Click({
+    if (-not $script:deepManifest) {return}
+    $answer = [Windows.MessageBox]::Show($script:window,'Удалить найденные старые кэши и временные файлы на выбранном диске? Это необратимо; работающие файлы будут пропущены.','Глубокая очистка','YesNo','Warning')
+    if ($answer -eq 'Yes') {
+        $safePath = $script:deepManifest.Replace("'","''")
+        Start-TurboWorker 'Глубокая очистка' 'Workers\DeepCleanup.ps1' ("-Mode Clean -Drive " + $script:selectedDisk + " -ManifestPath '" + $safePath + "'")
+    }
+})
+foreach ($task in @(@('BtnRepairAudit','Audit'),@('BtnRepairDism','DISM'),@('BtnRepairSfc','SFC'))) {
+    $button=$script:ui[[string]$task[0]]
+    $button.Tag=[string]$task[1]
+    $button.Add_Click({
+        param($sender,$eventArgs)
+        $mode=[string]$sender.Tag
+        $answer=[Windows.MessageBox]::Show($script:window,
+            "Запустить системную операцию $mode с правами администратора? Перед восстановлением сохраните важные данные.",
+            'Системное обслуживание','YesNo','Warning')
+        if($answer -eq 'Yes'){Start-TurboWorker 'Починка Windows' 'Workers\SystemRepair.ps1' ("-Mode "+$mode) $true}
+    })
+}
 $script:ui['BtnStartupSettings'].Add_Click({ Open-TurboShell 'ms-settings:startupapps' 'taskmgr.exe' })
 $script:ui['BtnAppsSettings'].Add_Click({ Open-TurboShell 'ms-settings:appsfeatures' 'appwiz.cpl' })
 $script:ui['BtnServices'].Add_Click({ Open-TurboShell 'services.msc' })
