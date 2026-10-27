@@ -15,6 +15,7 @@ $files = @(
     'app\Workers\RegistryAudit.ps1', 'app\Workers\SpaceMap.ps1',
     'app\Workers\ThreatCenter.ps1', 'app\Workers\DriverInventory.ps1',
     'app\Workers\RestorePoints.ps1', 'app\Workers\NativeScan.ps1',
+    'app\Workers\ClamAvScan.ps1',
     'app\Turbo.Scanner.psm1', 'data\signatures.json',
     'app\Turbo.Security.psm1', 'install\Install.ps1', 'install\Uninstall.ps1',
     'tests\SmokeTest.ps1', 'assets\TurboOldPC.ico'
