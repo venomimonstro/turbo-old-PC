@@ -19,7 +19,9 @@ function Invoke-TurboFileScan {
    [Parameter(Mandatory=$true)][string]$Root,
    [Parameter(Mandatory=$true)][string]$DatabasePath,
    [ValidateRange(1,100000)][int]$FileLimit=20000,
-   [ValidateRange(1,1024)][int]$MaxFileMB=64
+   [ValidateRange(1,1024)][int]$MaxFileMB=64,
+   [ValidateRange(1,100)][int]$MaxTotalGB=2,
+   [ValidateRange(10,7200)][int]$MaxSeconds=180
  )
  $directory=[IO.Path]::GetFullPath($Root).TrimEnd('\')
  if(-not (Test-Path -LiteralPath $directory -PathType Container)){throw 'Каталог сканирования не существует.'}
@@ -29,9 +31,12 @@ function Invoke-TurboFileScan {
  $stack=New-Object System.Collections.Stack
  $stack.Push($directory)
  $findings=New-Object 'System.Collections.Generic.List[object]'
- $scanned=0;$skipped=0;$errors=0
+ $scanned=0;$skipped=0;$errors=0;$hashedBytes=[int64]0;$limitHit=$false
+ $stopwatch=[Diagnostics.Stopwatch]::StartNew()
  $cutoff=[int64]$MaxFileMB*1MB
- while($stack.Count -gt 0 -and $scanned -lt $FileLimit){
+ $budget=[int64]$MaxTotalGB*1GB
+ while($stack.Count -gt 0 -and $scanned -lt $FileLimit -and $hashedBytes -lt $budget){
+  if($stopwatch.Elapsed.TotalSeconds -ge $MaxSeconds){$limitHit=$true;break}
   $folder=[string]$stack.Pop()
   try{$children=@(Get-ChildItem -LiteralPath $folder -Force -ErrorAction Stop)}
   catch{$errors++;continue}
@@ -39,7 +44,10 @@ function Invoke-TurboFileScan {
    if(($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){$skipped++;continue}
    if($entry.PSIsContainer){$stack.Push($entry.FullName);continue}
    if([int64]$entry.Length -gt $cutoff){$skipped++;continue}
+   if($hashedBytes+[int64]$entry.Length -gt $budget){$skipped++;$limitHit=$true;continue}
+   if($stopwatch.Elapsed.TotalSeconds -ge $MaxSeconds){$limitHit=$true;break}
    $scanned++
+   $hashedBytes+=[int64]$entry.Length
    try{
     $hash=(Get-FileHash -LiteralPath $entry.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToUpperInvariant()
     if($db.ContainsKey($hash)){
@@ -51,7 +59,8 @@ function Invoke-TurboFileScan {
  }
  [pscustomobject]@{
   Root=$directory;Scanned=$scanned;Skipped=$skipped;Errors=$errors
-  Truncated=($stack.Count -gt 0 -or $scanned -ge $FileLimit)
+  Truncated=($limitHit -or $stack.Count -gt 0 -or $scanned -ge $FileLimit)
+  HashedBytes=$hashedBytes;ElapsedSeconds=[math]::Round($stopwatch.Elapsed.TotalSeconds,1)
   Findings=@($findings.ToArray());Signatures=$db.Count
  }
 }
