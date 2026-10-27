@@ -14,6 +14,9 @@ if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { throw 'Bootstrap source
 [void][IO.Directory]::CreateDirectory($dist)
 [void][IO.Directory]::CreateDirectory($build)
 try {
+    $smoke = Join-Path $root 'tests\SmokeTest.ps1'
+    & (Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -ExecutionPolicy Bypass -File $smoke
+    if ($LASTEXITCODE -ne 0) { throw 'Smoke tests failed; EXE packaging cancelled.' }
     $package = Join-Path $dist "TurboOldPC-$Version-portable.zip"
     & (Join-Path $root 'tools\Build-Portable.ps1') -Version $Version
     if (-not (Test-Path -LiteralPath $package)) { throw 'ZIP build failed.' }
