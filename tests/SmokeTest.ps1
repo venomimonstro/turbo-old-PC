@@ -33,7 +33,7 @@ Write-Host 'PASS: GUI XML and essential controls'
 foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
  'DriverUpdatesGrid','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
  'BtnBoostPower','BtnBoostRestore','BtnScanOffline',
- 'NavRepair','BtnDeepAnalyze','BtnDeepClean','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit')) {
+ 'NavRepair','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit')) {
     if ($required -notin $names) { throw "Missing v0.3 dashboard control: $required" }
 }
 Write-Host 'PASS: security/driver/boost controls present'
