@@ -23,6 +23,7 @@ if ($processes.Count -gt 0) { throw 'Close Turbo Old PC before updating the inst
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'install'))
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'app\Workers'))
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'assets'))
+[void][IO.Directory]::CreateDirectory((Join-Path $destination 'data'))
 foreach ($item in @('Start.cmd','Turbo Old PC.vbs','TurboOldPC.exe','README.md','AUDIT.md','LICENSE')) {
     $from = Join-Path $source $item
     if (Test-Path -LiteralPath $from -PathType Leaf) {
