@@ -357,7 +357,12 @@ Add-Type -AssemblyName WindowsBase
     <ProgressBar x:Name="WorkProgress" Grid.Row="0" Height="4" IsIndeterminate="False" Visibility="Collapsed"
      Foreground="#08A878" Background="#E2ECEB" Margin="0,0,0,8"/>
     <Border Grid.Row="1" Background="#EAF0F1" CornerRadius="8" Padding="11,9">
-     <TextBlock x:Name="StatusText" Text="Подготовка" FontSize="12" TextWrapping="Wrap" Foreground="#4E6573"/>
+     <DockPanel>
+      <Button x:Name="BtnCancelWorker" DockPanel.Dock="Right" Content="Отменить проверку"
+       FontSize="12" Margin="12,0,0,0" Padding="10,4" Visibility="Collapsed"
+       Foreground="#773434" Background="#FFFFFF" BorderBrush="#D1C8C8"/>
+      <TextBlock x:Name="StatusText" Text="Подготовка" FontSize="12" TextWrapping="Wrap" Foreground="#4E6573"/>
+     </DockPanel>
     </Border>
    </Grid>
   </Grid>
@@ -376,7 +381,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall','BtnCancelWorker')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -384,6 +389,9 @@ $script:lastSnapshot = $null
 $script:activeProcess = $null
 $script:activeOp = ''
 $script:activeResultPath = ''
+$script:cancellableOps = @('Диагностика','Оценка очистки','Глубокий анализ','Карта диска',
+ 'Аудит реестра','Собственный сканер','ClamAV','Поиск драйверов','Инвентаризация драйверов',
+ 'Точки восстановления','Аудит безопасности','История буст')
 $script:tempPreviewDone = $false
 $script:deepManifest = ''
 $script:selectedDisk = [string]$env:SystemDrive
@@ -511,6 +519,7 @@ function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$e
         Set-TurboStatus ("Выполняется: $operation. Окно остаётся доступным.")
         $script:ui['WorkProgress'].Visibility = 'Visible'
         $script:ui['WorkProgress'].IsIndeterminate = $true
+        $script:ui['BtnCancelWorker'].Visibility = if($operation -in $script:cancellableOps){'Visible'}else{'Collapsed'}
         $script:timer.Start()
     } catch { Show-TurboError "Не удалось запустить: $($_.Exception.Message)" }
 }
@@ -521,6 +530,7 @@ $script:timer.Add_Tick({
     $script:timer.Stop()
     $script:ui['WorkProgress'].Visibility = 'Collapsed'
     $script:ui['WorkProgress'].IsIndeterminate = $false
+    $script:ui['BtnCancelWorker'].Visibility = 'Collapsed'
     $operation = $script:activeOp
     $resultPath = $script:activeResultPath
     $exitCode = $script:activeProcess.ExitCode
@@ -870,5 +880,34 @@ $script:ui['BtnReport'].Add_Click({
     } catch { Show-TurboError "Не удалось сохранить отчёт: $($_.Exception.Message)" }
 })
 $script:ui['BtnReportsFolder'].Add_Click({ Open-TurboShell $script:reportsDir })
+$script:ui['BtnCancelWorker'].Add_Click({
+    if($null -eq $script:activeProcess -or $script:activeOp -notin $script:cancellableOps){return}
+    $answer=[Windows.MessageBox]::Show($script:window,
+        'Остановить текущую проверку? Уже выполненный анализ не будет сохранён.',
+        'Отмена проверки','YesNo','Question')
+    if($answer -ne 'Yes'){return}
+    try{
+        $script:timer.Stop()
+        $script:activeProcess.Refresh()
+        if(-not $script:activeProcess.HasExited){
+            $script:activeProcess.Kill()
+            [void]$script:activeProcess.WaitForExit(3000)
+        }
+        $script:activeProcess.Dispose()
+        $script:activeProcess=$null
+        if($script:activeResultPath){Remove-Item -LiteralPath $script:activeResultPath -Force -ErrorAction SilentlyContinue}
+        $script:activeOp='';$script:activeResultPath=''
+        $script:ui['WorkProgress'].Visibility='Collapsed'
+        $script:ui['BtnCancelWorker'].Visibility='Collapsed'
+        Set-TurboStatus 'Проверка отменена. Изменения системы не выполнялись.'
+    }catch{Show-TurboError "Не удалось отменить операцию: $($_.Exception.Message)"}
+})
+$script:window.Add_Closing({
+    param($sender,$event)
+    if($null -ne $script:activeProcess){
+        $event.Cancel=$true
+        Show-TurboError 'Дождитесь завершения системной операции. Безопасные проверки можно отменить отдельной кнопкой.'
+    }
+})
 $script:window.Add_ContentRendered({ Start-TurboWorker 'Диагностика' 'Workers\Diagnostics.ps1' })
 [void]$script:window.ShowDialog()
