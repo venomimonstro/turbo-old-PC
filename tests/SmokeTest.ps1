@@ -30,6 +30,18 @@ foreach ($required in @('MainTabs','BtnAnalyze','BtnScan','BtnScanFull','BtnTemp
     if ($required -notin $names) { throw "В XAML отсутствует элемент: $required" }
 }
 Write-Host 'PASS: GUI XML and essential controls'
+foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
+ 'DriverUpdatesGrid','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
+ 'BtnBoostPower','BtnBoostRestore','BtnScanOffline')) {
+    if ($required -notin $names) { throw "Missing v0.3 dashboard control: $required" }
+}
+Write-Host 'PASS: security/driver/boost controls present'
+$securityModule = Join-Path $root 'app\Turbo.Security.psm1'
+Import-Module -Name $securityModule -Force -ErrorAction Stop
+if (-not (Get-Command Get-TurboSecurityAudit -ErrorAction SilentlyContinue)) {
+    throw 'Security audit module export unavailable.'
+}
+Write-Host 'PASS: security audit module imports'
 
 Import-Module (Join-Path $root 'app\Turbo.Core.psm1') -Force -ErrorAction Stop
 $previousLocal = $env:LOCALAPPDATA
@@ -63,6 +75,13 @@ try {
     try { Clear-TurboTemp -Preview $forged | Out-Null } catch { $blocked = $true }
     if (-not $blocked) { throw 'Не сработала проверка разрешённой папки.' }
     Write-Host 'PASS: unauthorized system path rejected'
+    # Read-only boost history must work without touching a real user's registry.
+    $boostOutput = Join-Path $sandbox 'boost-history.json'
+    & (Join-Path $root 'app\Workers\Boost.ps1') -Mode History -OutputPath $boostOutput
+    if (-not (Test-Path -LiteralPath $boostOutput)) { throw 'Boost history did not create a result.' }
+    $boostResult = Get-Content -LiteralPath $boostOutput -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $boostResult.Success) { throw 'Boost history read failed.' }
+    Write-Host 'PASS: boost history sandbox test'
 } finally {
     $env:LOCALAPPDATA = $previousLocal
     if (Test-Path -LiteralPath $sandbox) {
