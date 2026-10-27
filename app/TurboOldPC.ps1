@@ -285,6 +285,10 @@ Add-Type -AssemblyName WindowsBase
 </Window>
 '@$reader = New-Object System.Xml.XmlNodeReader $xaml
 $script:window = [Windows.Markup.XamlReader]::Load($reader)
+$iconPath = Join-Path $PSScriptRoot '..\assets\TurboOldPC.ico'
+if (Test-Path -LiteralPath $iconPath -PathType Leaf) {
+    try { $script:window.Icon = [Windows.Media.Imaging.BitmapFrame]::Create([Uri]$iconPath) } catch { }
+}
 $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
