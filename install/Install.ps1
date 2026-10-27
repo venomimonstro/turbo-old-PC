@@ -60,7 +60,7 @@ $regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\TurboOldPC
 $uninstaller = Join-Path $destination 'install\Uninstall.ps1'
 $uninstallCommand = '"' + (Join-Path $PSHOME 'powershell.exe') + '" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + $uninstaller + '"'
 New-ItemProperty -Path $regPath -Name DisplayName -Value 'Turbo Old PC' -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $regPath -Name DisplayVersion -Value '0.2.0' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $regPath -Name DisplayVersion -Value '0.3.0' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $regPath -Name Publisher -Value 'Turbo Old PC Community' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $regPath -Name InstallLocation -Value $destination -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $regPath -Name UninstallString -Value $uninstallCommand -PropertyType String -Force | Out-Null
