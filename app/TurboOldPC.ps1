@@ -194,6 +194,9 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnScanFull" Style="{StaticResource ActionButton}" Content="Полная проверка"/>
         <Button x:Name="BtnScanOffline" Style="{StaticResource ActionButton}" Content="Офлайн-проверка"/>
         <Button x:Name="BtnSecondOpinion" Style="{StaticResource ActionButton}" Content="Вторая проверка Microsoft"/>
+        <Button x:Name="BtnDefenderUpdate" Style="{StaticResource ActionButton}" Content="Обновить базу вирусов"/>
+        <Button x:Name="BtnDefenderThreats" Style="{StaticResource ActionButton}" Content="Обнаружения"/>
+        <Button x:Name="BtnDefenderRemediate" Style="{StaticResource ActionButton}" Content="Обработать активные угрозы"/>
         <Button x:Name="BtnWindowsSecurity" Style="{StaticResource ActionButton}" Content="Журнал защиты Windows"/>
        </WrapPanel>
        <TextBox x:Name="SecurityText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
@@ -368,7 +371,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -551,6 +554,16 @@ $script:timer.Add_Tick({
                 $script:ui['BtnTempClean'].IsEnabled = $false
                 Set-TurboStatus 'Очистка завершена.'
             }
+            'Центр угроз' {
+                $lines=New-Object 'System.Collections.Generic.List[string]'
+                $lines.Add([string]$result.Message)
+                foreach($d in @($result.Detections)) {
+                    $lines.Add("$($d.Time) | ID $($d.ThreatID) | Действие: $($d.ActionSuccess) | $($d.Resources)")
+                }
+                $lines.Add('Проверяйте историю обработки и карантин через Безопасность Windows. Обнаружения могут относиться к уже устранённым угрозам.')
+                $script:ui['SecurityText'].Text=$lines -join [Environment]::NewLine
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Антивирус' {
                 $script:ui['SecurityText'].Text = [string]$result.Message
                 Set-TurboStatus 'Команда Defender выполнена. Проверьте журнал Защиты Windows.'
@@ -671,6 +684,14 @@ $script:ui['BtnScanFull'].Add_Click({
         $script:ui['SecurityText'].Text = 'Запущена полная проверка Microsoft Defender. Ждите завершения фоновой операции.'
         Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1' '-ScanType FullScan'
     }
+})
+$script:ui['BtnDefenderUpdate'].Add_Click({ Start-TurboWorker 'Центр угроз' 'Workers\ThreatCenter.ps1' '-Mode Update' })
+$script:ui['BtnDefenderThreats'].Add_Click({ Start-TurboWorker 'Центр угроз' 'Workers\ThreatCenter.ps1' '-Mode Threats' })
+$script:ui['BtnDefenderRemediate'].Add_Click({
+    $answer=[Windows.MessageBox]::Show($script:window,
+        'Microsoft Defender попытается устранить ВСЕ обнаруженные активные угрозы. Это может затронуть подозрительные файлы, включая ложные срабатывания. Продолжить с повышением прав?',
+        'Удаление угроз','YesNo','Warning')
+    if($answer -eq 'Yes'){Start-TurboWorker 'Центр угроз' 'Workers\ThreatCenter.ps1' '-Mode Remediate' $true}
 })
 $script:ui['BtnScanOffline'].Add_Click({
     [void][Windows.MessageBox]::Show($script:window,
