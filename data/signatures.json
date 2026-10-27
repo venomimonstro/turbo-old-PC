@@ -1,0 +1,10 @@
+{
+  "Schema": 1,
+  "Description": "Starter test-only signatures. No live malware coverage. Hash is EICAR standard harmless test file.",
+  "Signatures": [
+    {
+      "Name": "EICAR-AV-Test (harmless test artifact)",
+      "SHA256": "275A021BBFB6489E54D471899F7DB9D1663FC695EC2FE2A2C4538AABF651FD0F"
+    }
+  ]
+}
