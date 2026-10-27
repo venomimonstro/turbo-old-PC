@@ -49,11 +49,11 @@ function Enumerate($category) {
  $stack.Push($category.Root)
  $list=New-Object 'System.Collections.Generic.List[object]'
  $visited=0
- while($stack.Count -gt 0 -and $visited -lt 150000){
+ while($stack.Count -gt 0 -and $visited -lt 30000){
   $folder=$stack.Pop()
   foreach($e in @(Get-ChildItem -LiteralPath $folder -Force -ErrorAction SilentlyContinue)){
    $visited++
-   if($visited -gt 150000){break}
+   if($visited -gt 30000){break}
    if(($e.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){continue}
    if($e.PSIsContainer){$stack.Push($e.FullName);continue}
    if($e.LastWriteTime -gt $cutoff){continue}
@@ -62,7 +62,7 @@ function Enumerate($category) {
      Path=$e.FullName;Root=$category.Root;Category=$category.Category
      AgeDays=$category.AgeDays;Length=[int64]$e.Length
    })
-   if($list.Count -ge 100000){return @($list.ToArray())}
+   if($list.Count -ge 15000){return @($list.ToArray())}
   }
  }
  return @($list.ToArray())
@@ -77,8 +77,13 @@ try {
  $categories=@(Get-Categories $Drive.ToUpperInvariant())
  if($Mode -eq 'Analyze'){
   $items=New-Object 'System.Collections.Generic.List[object]'
+  $truncated=$false
   foreach($category in $categories){
-   foreach($file in @(Enumerate $category)){$items.Add($file)}
+   foreach($file in @(Enumerate $category)){
+    if($items.Count -ge 30000){$truncated=$true;break}
+    $items.Add($file)
+   }
+   if($truncated){break}
   }
   $summary=@($items.ToArray()|Group-Object Category|ForEach-Object{
     [pscustomobject]@{Category=$_.Name;Files=$_.Count;Bytes=[int64](($_.Group|Measure-Object Length -Sum).Sum)}
@@ -89,9 +94,9 @@ try {
   Save-Manifest $manifest ([pscustomobject]@{Drive=$Drive.ToUpperInvariant();Created=(Get-Date).ToString('o');Files=@($items.ToArray())})
   $result=[pscustomobject]@{
    Success=$true;Mode=$Mode;Drive=$Drive.ToUpperInvariant();Groups=$summary
-   Count=$items.Count;Bytes=[int64](($items.ToArray()|Measure-Object Length -Sum).Sum)
+   Count=$items.Count;Truncated=$truncated;Bytes=[int64](($items.ToArray()|Measure-Object Length -Sum).Sum)
    ManifestPath=$manifest
-   Message='Найдены только проверенные категории очистки. Другие крупные файлы на диске не удаляются автоматически.'
+   Message='Найдены только проверенные категории очистки. Если лимит 30 000 файлов достигнут, анализ неполный. Другие крупные файлы на диске не удаляются автоматически.'
   }
  }else{
   $manifestRoot=Full (Join-Path $env:LOCALAPPDATA 'TurboOldPC\Manifests')
