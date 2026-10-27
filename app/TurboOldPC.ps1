@@ -337,7 +337,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnRepairDism" Style="{StaticResource ActionButton}" Content="Восстановить через DISM"/>
         <Button x:Name="BtnRepairSfc" Style="{StaticResource ActionButton}" Content="Проверить и исправить SFC"/>
        </WrapPanel>
-       <TextBlock Grid.Row="3" Text="Очистка и починка реестра: только диагностика ссылок автозапуска, без опасного массового удаления." TextWrapping="Wrap" Margin="0,14,0,12"/>
+       <WrapPanel Grid.Row="3" Margin="0,14,0,12"><Button x:Name="BtnRegistryAudit" Style="{StaticResource ActionButton}" Content="Аудит автозапуска в реестре"/></WrapPanel>
        <TextBox x:Name="RepairText" Grid.Row="4" IsReadOnly="True" Background="#FAFCFC" VerticalScrollBarVisibility="Auto"
         TextWrapping="Wrap" Text="Выберите проверку. Результаты сохраняются локально."/>
       </Grid>
@@ -367,7 +367,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -588,6 +588,11 @@ $script:timer.Add_Tick({
                 $script:ui['BtnDeepClean'].IsEnabled = $false
                 Set-TurboStatus ([string]$result.Message)
             }
+            'Аудит реестра' {
+                $lines = @($result.Entries | ForEach-Object { "$($_.Status): $($_.Name) — $($_.Command)" })
+                $script:ui['RepairText'].Text = $lines -join [Environment]::NewLine
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Починка Windows' {
                 $script:ui['RepairText'].Text = [string]$result.Message
                 Set-TurboStatus ([string]$result.Message)
@@ -659,6 +664,7 @@ $script:ui['BtnScanOffline'].Add_Click({
 $script:ui['BtnSecondOpinion'].Add_Click({
     Open-TurboShell 'https://learn.microsoft.com/en-us/defender-endpoint/safety-scanner-download'
 })
+$script:ui['BtnRegistryAudit'].Add_Click({ Start-TurboWorker 'Аудит реестра' 'Workers\RegistryAudit.ps1' })
 $script:ui['BtnDeepAnalyze'].Add_Click({
     $choice = [Microsoft.VisualBasic.Interaction]::InputBox('Буква диска для анализа (например C:):','Глубокая очистка',$script:selectedDisk)
     if ($choice -notmatch '^[A-Za-z]:$') { Show-TurboError 'Введите только букву диска: C: или D:'; return }
