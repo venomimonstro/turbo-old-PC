@@ -41,6 +41,18 @@ internal static class Bootstrap
             return 1;
         }
 #else
+#if INSTALLER
+        string installPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Programs", "TurboOldPC");
+        DialogResult consent = MessageBox.Show(
+            "Установить Turbo Old PC для текущего пользователя?\n\n" +
+            "Каталог: " + installPath + "\n\n" +
+            "Установка не требует прав администратора. Драйверы и восстановление Windows " +
+            "будут запрашивать разрешения отдельно. Программа не отключает Defender.",
+            "Turbo Old PC — установка", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (consent != DialogResult.Yes) return 0;
+#endif
         string stage = null;
         try
         {
@@ -120,6 +132,18 @@ internal static class Bootstrap
                         ". Open Start.cmd from the sources for detailed diagnostics.",
                         "Turbo Old PC", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
+#if INSTALLER
+                else
+                {
+                    if (MessageBox.Show("Программа установлена в " + installPath +
+                        "\n\nЗапустить Turbo Old PC сейчас?", "Turbo Old PC — готово",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    {
+                        string installedExe = Path.Combine(installPath, "TurboOldPC.exe");
+                        if (File.Exists(installedExe)) Process.Start(installedExe);
+                    }
+                }
+#endif
                 return child.ExitCode;
             }
         }
