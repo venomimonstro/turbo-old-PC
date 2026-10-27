@@ -11,6 +11,7 @@ if ($sourceNorm.Equals($destNorm, [StringComparison]::OrdinalIgnoreCase)) {
 }
 if (-not (Test-Path -LiteralPath (Join-Path $source 'Start.cmd') -PathType Leaf) -or
     -not (Test-Path -LiteralPath (Join-Path $source 'app\TurboOldPC.ps1') -PathType Leaf) -or
+    -not (Test-Path -LiteralPath (Join-Path $source 'TurboOldPC.exe') -PathType Leaf) -or
     -not (Test-Path -LiteralPath (Join-Path $source 'app\Turbo.Core.psm1') -PathType Leaf)) {
     throw 'The installation package is incomplete. Extract the full ZIP before installation.'
 }
@@ -22,7 +23,7 @@ if ($processes.Count -gt 0) { throw 'Close Turbo Old PC before updating the inst
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'install'))
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'app\Workers'))
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'assets'))
-foreach ($item in @('Start.cmd','Turbo Old PC.vbs','README.md','LICENSE')) {
+foreach ($item in @('Start.cmd','Turbo Old PC.vbs','TurboOldPC.exe','README.md','AUDIT.md','LICENSE')) {
     $from = Join-Path $source $item
     if (Test-Path -LiteralPath $from -PathType Leaf) {
         Copy-Item -LiteralPath $from -Destination (Join-Path $destination $item) -Force -ErrorAction Stop
@@ -45,7 +46,7 @@ $shell = New-Object -ComObject WScript.Shell
 function New-TurboShortcut {
     param([string]$ShortcutPath,[string]$TargetDir)
     $link = $shell.CreateShortcut($ShortcutPath)
-    $link.TargetPath = Join-Path $TargetDir 'Turbo Old PC.vbs'
+    $link.TargetPath = Join-Path $TargetDir 'TurboOldPC.exe'
     $link.WorkingDirectory = $TargetDir
     $link.Description = 'Turbo Old PC — бесплатная диагностика, очистка и защита Windows'
     $link.IconLocation = Join-Path $TargetDir 'assets\TurboOldPC.ico'
