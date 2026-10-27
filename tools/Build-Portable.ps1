@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([string]$Version = '0.4.0')
+param([string]$Version = '0.4.0', [string]$LauncherPath = '')
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $dist = Join-Path $root 'dist'
@@ -28,6 +28,10 @@ try {
         $parent = Split-Path -Parent $target
         [void][IO.Directory]::CreateDirectory($parent)
         Copy-Item -LiteralPath $source -Destination $target -Force -ErrorAction Stop
+    }
+    if ($LauncherPath) {
+        if (-not (Test-Path -LiteralPath $LauncherPath -PathType Leaf)) { throw 'Compiled application launcher missing.' }
+        Copy-Item -LiteralPath $LauncherPath -Destination (Join-Path $staging 'TurboOldPC.exe') -Force -ErrorAction Stop
     }
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Force }
     Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $destination -CompressionLevel Optimal -Force
