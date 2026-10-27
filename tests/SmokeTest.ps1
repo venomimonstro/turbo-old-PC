@@ -1,8 +1,10 @@
 ﻿param([switch]$FullDiagnostics)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$files = @(Get-ChildItem -LiteralPath (Join-Path $root 'app') -Recurse -File |
-    Where-Object { $_.Extension -in @('.ps1','.psm1') })
+$files = @(foreach ($folder in @('app','install','tools','tests')) {
+    Get-ChildItem -LiteralPath (Join-Path $root $folder) -Recurse -File |
+        Where-Object { $_.Extension -in @('.ps1','.psm1') }
+})
 if ($files.Count -lt 5) { throw 'Не найдены основные скрипты проекта.' }
 
 foreach ($file in $files) {
@@ -21,7 +23,13 @@ $match = [regex]::Match($gui, "(?s)\[xml\]\`$xaml\s*=\s*@'\s*(.*?)\s*'@")
 if (-not $match.Success) { throw 'XAML GUI not found.' }
 [xml]$view = $match.Groups[1].Value
 if ($view.DocumentElement.LocalName -ne 'Window') { throw 'Некорректный корневой элемент XAML.' }
-Write-Host 'PASS: GUI XML'
+$names = @(Select-Xml -Xml $view -XPath "//*[@*[local-name()='Name']]" |
+    ForEach-Object { $_.Node.GetAttribute('Name','http://schemas.microsoft.com/winfx/2006/xaml') })
+foreach ($required in @('MainTabs','BtnAnalyze','BtnScan','BtnScanFull','BtnTempPreview',
+ 'BtnTempClean','BtnDriversUpdate','WorkProgress','NavHome','NavSecurity','NavCleanup')) {
+    if ($required -notin $names) { throw "В XAML отсутствует элемент: $required" }
+}
+Write-Host 'PASS: GUI XML and essential controls'
 
 Import-Module (Join-Path $root 'app\Turbo.Core.psm1') -Force -ErrorAction Stop
 $previousLocal = $env:LOCALAPPDATA
