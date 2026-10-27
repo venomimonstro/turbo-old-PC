@@ -45,6 +45,28 @@ if (-not (Get-Command Get-TurboSecurityAudit -ErrorAction SilentlyContinue)) {
 Write-Host 'PASS: security audit module imports'
 
 Import-Module (Join-Path $root 'app\Turbo.Core.psm1') -Force -ErrorAction Stop
+# Independent scanner is tested on an inert text fixture, without malware samples.
+Import-Module (Join-Path $root 'app\Turbo.Scanner.psm1') -Force -ErrorAction Stop
+$scannerSandbox=Join-Path ([IO.Path]::GetTempPath()) ('TurboScan-Smoke-'+[guid]::NewGuid().ToString('N'))
+[void][IO.Directory]::CreateDirectory($scannerSandbox)
+try {
+ $fixture=Join-Path $scannerSandbox 'sample.txt'
+ [IO.File]::WriteAllText($fixture,'Safe test fixture for Turbo Old PC.')
+ $fingerprint=(Get-FileHash -LiteralPath $fixture -Algorithm SHA256).Hash
+ $dbPath=Join-Path $scannerSandbox 'testdb.json'
+ $testdb=[pscustomobject]@{Schema=1;Signatures=@([pscustomobject]@{Name='Test fixture only';SHA256=$fingerprint})}
+ [IO.File]::WriteAllText($dbPath,($testdb|ConvertTo-Json -Depth 4))
+ $found=Invoke-TurboFileScan -Root $scannerSandbox -DatabasePath $dbPath
+ if (@($found.Findings).Count -ne 1 -or $found.Findings[0].SHA256 -ne $fingerprint) {
+    throw 'Own signature scanner failed safe fixture detection.'
+ }
+ if (-not (Test-Path -LiteralPath $fixture -PathType Leaf)) {
+    throw 'Read-only scanner unexpectedly modified a fixture.'
+ }
+ Write-Host 'PASS: independent SHA256 scan detection and non-destructive behavior'
+}finally{
+ Remove-Item -LiteralPath $scannerSandbox -Recurse -Force -ErrorAction SilentlyContinue
+}
 $previousLocal = $env:LOCALAPPDATA
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('TurboOldPC-Smoke-' + [guid]::NewGuid().ToString('N'))
 $fakeTemp = Join-Path $sandbox 'Temp'
