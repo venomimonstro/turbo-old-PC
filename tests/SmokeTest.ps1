@@ -31,7 +31,7 @@ foreach ($required in @('MainTabs','BtnAnalyze','BtnScan','BtnScanFull','BtnTemp
 }
 Write-Host 'PASS: GUI XML and essential controls'
 foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
- 'DriverUpdatesGrid','BtnDriverInventory','BtnNativeScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
+ 'DriverUpdatesGrid','BtnDriverInventory','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
  'BtnBoostPower','BtnBoostRestore','BtnScanOffline',
  'NavRepair','BtnDriverDownload','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard')) {
     if ($required -notin $names) { throw "Missing v0.3 dashboard control: $required" }
