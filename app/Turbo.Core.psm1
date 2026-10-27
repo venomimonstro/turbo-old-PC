@@ -12,7 +12,10 @@ function Get-TurboHardware {
         $disk = Get-Partition -DriveLetter $driveLetter -ErrorAction Stop | Get-Disk -ErrorAction Stop | Select-Object -First 1
         if ($null -ne $disk) {
             $diskName = [string]$disk.FriendlyName
-            $diskMedia = [string]$disk.MediaType
+            $diskMedia = 'Неизвестно'
+            if ($null -ne $disk.PSObject.Properties['MediaType']) {
+                $diskMedia = [string]$disk.MediaType
+            }
             $diskBus = [string]$disk.BusType
             if ([string]::IsNullOrWhiteSpace($diskMedia) -or $diskMedia -match 'Unspecified|Unknown') {
                 try {
@@ -282,6 +285,15 @@ function Clear-TurboTemp {
         $path = [IO.Path]::GetFullPath([string]$entry.Path)
         if (-not $path.StartsWith(($root + '\'), [StringComparison]::OrdinalIgnoreCase)) { $failed++; continue }
         try {
+            $parent = [IO.Path]::GetDirectoryName($path)
+            while ($parent.Length -ge $root.Length) {
+                $folder = Get-Item -LiteralPath $parent -Force -ErrorAction Stop
+                if (-not $folder.PSIsContainer -or (($folder.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
+                    throw 'Обнаружена ссылка в родительском каталоге.'
+                }
+                if ($parent.Equals($root, [StringComparison]::OrdinalIgnoreCase)) { break }
+                $parent = [IO.Path]::GetDirectoryName($parent)
+            }
             $item = Get-Item -LiteralPath $path -Force -ErrorAction Stop
             if ($item.PSIsContainer -or (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) { $failed++; continue }
             if ($item.LastWriteTime -gt (Get-Date).AddHours(-48)) { $failed++; continue }
