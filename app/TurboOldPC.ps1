@@ -118,6 +118,8 @@ Add-Type -AssemblyName WindowsBase
      <Button x:Name="NavPerformance" Style="{StaticResource SideButton}" Content="▤   Производительность"/>
      <Button x:Name="NavDrivers" Style="{StaticResource SideButton}" Content="⚙   Драйверы"/>
      <Button x:Name="NavApps" Style="{StaticResource SideButton}" Content="▦   Программы"/>
+     <Button x:Name="NavAudit" Style="{StaticResource SideButton}" Content="◉   Уязвимости"/>
+     <Button x:Name="NavBoost" Style="{StaticResource SideButton}" Content="⚡   Турбо-режим"/>
     </StackPanel>
     <StackPanel Grid.Row="2" Margin="22,0,15,22">
      <Border Height="1" Background="#3A6765" Margin="0,0,0,15"/>
@@ -189,6 +191,7 @@ Add-Type -AssemblyName WindowsBase
        <WrapPanel Grid.Row="2">
         <Button x:Name="BtnScan" Style="{StaticResource ActionButton}" Content="Быстрая проверка"/>
         <Button x:Name="BtnScanFull" Style="{StaticResource ActionButton}" Content="Полная проверка"/>
+        <Button x:Name="BtnScanOffline" Style="{StaticResource ActionButton}" Content="Офлайн-проверка"/>
         <Button x:Name="BtnWindowsSecurity" Style="{StaticResource ActionButton}" Content="Журнал защиты Windows"/>
        </WrapPanel>
        <TextBox x:Name="SecurityText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
@@ -253,8 +256,16 @@ Add-Type -AssemblyName WindowsBase
        <TextBlock Text="Проверка драйверов и оборудования" FontSize="22" FontWeight="Bold"/>
        <TextBlock Grid.Row="1" TextWrapping="Wrap" Foreground="#5A6F7C" Margin="0,10,0,14"
         Text="Windows показывает устройства с ошибками. Обновляйте драйверы только через Windows Update или официальную поддержку производителя по точной модели."/>
-       <DataGrid x:Name="DriversGrid" Grid.Row="2"/>
+       <Grid Grid.Row="2">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="2*"/></Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Margin="0,0,0,6" FontWeight="SemiBold" Text="Устройства с ошибками Windows"/>
+        <DataGrid x:Name="DriversGrid" Grid.Row="1"/>
+        <TextBlock Grid.Row="2" Margin="0,12,0,6" FontWeight="SemiBold" Text="Доступные обновления драйверов Windows Update — выберите один"/>
+        <DataGrid x:Name="DriverUpdatesGrid" Grid.Row="3" SelectionMode="Single"/>
+       </Grid>
        <WrapPanel Grid.Row="3" Margin="0,12,0,0">
+        <Button x:Name="BtnDriverSearch" Style="{StaticResource ActionButton}" Content="Найти драйверы"/>
+        <Button x:Name="BtnDriverInstall" Style="{StaticResource ActionButton}" Content="Установить выбранный" IsEnabled="False"/>
         <Button x:Name="BtnDriversUpdate" Style="{StaticResource ActionButton}" Content="Windows Update"/>
         <Button x:Name="BtnOemSupport" Style="{StaticResource ActionButton}" Content="Сайт производителя"/>
         <Button x:Name="BtnDeviceManager" Style="{StaticResource ActionButton}" Content="Диспетчер устройств"/>
@@ -275,6 +286,41 @@ Add-Type -AssemblyName WindowsBase
       </Grid>
      </Border>
     </TabItem>
+    <TabItem Header="Уязвимости">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="Аудит безопасности и защиты от вымогателей" FontSize="21" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" Margin="0,10,0,14" Foreground="#5A6F7C" TextWrapping="Wrap"
+        Text="Проверка антивируса, брандмауэра, UAC, SMBv1, RDP и контроля папок. Не является полноценным сканером CVE и не доказывает отсутствие вредоносного ПО."/>
+       <WrapPanel Grid.Row="2">
+        <Button x:Name="BtnSecurityAudit" Style="{StaticResource ActionButton}" Content="Проверить безопасность"/>
+        <Button x:Name="BtnRansomware" Style="{StaticResource ActionButton}" Content="Защита от вымогателей"/>
+        <Button x:Name="BtnSecurityUpdates" Style="{StaticResource ActionButton}" Content="Обновления безопасности"/>
+       </WrapPanel>
+       <DataGrid x:Name="SecurityGrid" Grid.Row="3" Margin="0,12,0,0"/>
+      </Grid>
+     </Border>
+    </TabItem>
+    <TabItem Header="Турбо-режим">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="Обратимые профили ускорения" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" Margin="0,11,0,18" Foreground="#5A6F7C" TextWrapping="Wrap"
+        Text="Экспертные режимы включаются по отдельности. Каждый записывает старые значения для отката. Настройки антивируса, обновлений и критичных служб не затрагиваются. Возможна перезагрузка сеанса."/>
+       <WrapPanel Grid.Row="2">
+        <Button x:Name="BtnBoostUI" Style="{StaticResource ActionButton}" Content="Убрать анимации"/>
+        <Button x:Name="BtnBoostPower" Style="{StaticResource ActionButton}" Content="Высокая производительность"/>
+        <Button x:Name="BtnBoostRestore" Style="{StaticResource ActionButton}" Content="Отменить последний буст"/>
+        <Button x:Name="BtnBoostHistory" Style="{StaticResource ActionButton}" Content="История"/>
+       </WrapPanel>
+       <TextBox x:Name="BoostText" Grid.Row="3" Margin="0,12,0,0" Background="#FAFCFC"
+        IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+        Text="Ни один режим не применён. Выбирайте только те изменения, эффект которых понимаете."/>
+      </Grid>
+     </Border>
+    </TabItem>
    </TabControl>
    <Grid Grid.Row="2" Margin="0,13,0,0">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -287,7 +333,8 @@ Add-Type -AssemblyName WindowsBase
   </Grid>
  </Grid>
 </Window>
-'@$reader = New-Object System.Xml.XmlNodeReader $xaml
+'@
+$reader = New-Object System.Xml.XmlNodeReader $xaml
 $script:window = [Windows.Markup.XamlReader]::Load($reader)
 $iconPath = Join-Path $PSScriptRoot '..\assets\TurboOldPC.ico'
 if (Test-Path -LiteralPath $iconPath -PathType Leaf) {
@@ -297,7 +344,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -408,7 +455,7 @@ function Show-TurboSnapshot($snap) {
     $script:ui['ProcessesGrid'].ItemsSource = @($snap.Processes)
     $script:ui['ServiceGrid'].ItemsSource = @($snap.ServiceAudit)
 }
-function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$extraParams = '') {
+function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$extraParams = '', [bool]$elevated = $false) {
     if ($null -ne $script:activeProcess) {
         Show-TurboError 'Дождитесь завершения текущей операции.'
         return
@@ -419,9 +466,12 @@ function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$e
         $output = Join-Path $script:jobsDir (([guid]::NewGuid().ToString('N')) + '.json')
         $command = "& '" + $file.Replace("'","''") + "' -OutputPath '" + $output.Replace("'","''") + "' " + $extraParams
         $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
-        $script:activeProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList @(
-            '-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',$encoded
-        ) -WindowStyle Hidden -PassThru -ErrorAction Stop
+        $args = @('-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',$encoded)
+        if ($elevated) {
+            $script:activeProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $args -Verb RunAs -PassThru -ErrorAction Stop
+        } else {
+            $script:activeProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $args -WindowStyle Hidden -PassThru -ErrorAction Stop
+        }
         $script:activeOp = $operation
         $script:activeResultPath = $output
         Set-TurboStatus ("Выполняется: $operation. Окно остаётся доступным.")
@@ -479,6 +529,31 @@ $script:timer.Add_Tick({
                 $script:ui['SecurityText'].Text = [string]$result.Message
                 Set-TurboStatus 'Команда Defender выполнена. Проверьте журнал Защиты Windows.'
             }
+            'Аудит защиты' {
+                $script:ui['SecurityGrid'].ItemsSource = @($result.Checks)
+                Set-TurboStatus ([string]$result.Message)
+            }
+            'Поиск драйверов' {
+                $script:ui['DriverUpdatesGrid'].ItemsSource = @($result.Updates)
+                $script:ui['BtnDriverInstall'].IsEnabled = $false
+                Set-TurboStatus ([string]$result.Message)
+            }
+            'Установка драйвера' {
+                $script:ui['BtnDriverInstall'].IsEnabled = $false
+                $script:ui['DriverUpdatesGrid'].ItemsSource = $null
+                Show-TurboError ([string]$result.Message + ' Обновите список после возможной перезагрузки.')
+                Set-TurboStatus ([string]$result.Message)
+            }
+            'Буст' {
+                $script:ui['BoostText'].Text = [string]$result.Message
+                Set-TurboStatus ([string]$result.Message)
+            }
+            'История бустов' {
+                $items = @($result.History | ForEach-Object { "$($_.Date): $($_.Profile) — $($_.Status)" })
+                $script:ui['BoostText'].Text = ($items -join [Environment]::NewLine)
+                if ($items.Count -eq 0) { $script:ui['BoostText'].Text = 'История изменений пуста.' }
+                Set-TurboStatus 'Журнал профилей прочитан.'
+            }
         }
     } catch {
         $message = [string]$_.Exception.Message
@@ -504,7 +579,8 @@ $script:ui['BtnTempClean'].Add_Click({
 })
 $navigation = @(
     @('NavHome',0), @('NavSecurity',1), @('NavCleanup',2),
-    @('NavStartup',3), @('NavPerformance',4), @('NavDrivers',5), @('NavApps',6)
+    @('NavStartup',3), @('NavPerformance',4), @('NavDrivers',5), @('NavApps',6),
+    @('NavAudit',7), @('NavBoost',8)
 )
 foreach ($pair in $navigation) {
     $item = $pair
@@ -537,6 +613,50 @@ $script:ui['BtnVisualEffects'].Add_Click({ Open-TurboShell 'SystemPropertiesPerf
 $script:ui['BtnPowerPlan'].Add_Click({ Open-TurboShell 'powercfg.cpl' })
 $script:ui['BtnStorageSense'].Add_Click({ Open-TurboShell 'ms-settings:storagepolicies' 'cleanmgr.exe' })
 $script:ui['BtnDriversUpdate'].Add_Click({ Open-TurboShell 'ms-settings:windowsupdate-optionalupdates' 'ms-settings:windowsupdate' })
+$script:ui['BtnSecurityAudit'].Add_Click({ Start-TurboWorker 'Аудит защиты' 'Workers\SecurityAudit.ps1' })
+$script:ui['BtnRansomware'].Add_Click({ Open-TurboShell 'windowsdefender:' 'ms-settings:windowsdefender' })
+$script:ui['BtnSecurityUpdates'].Add_Click({ Open-TurboShell 'ms-settings:windowsupdate' })
+$script:ui['BtnDriverSearch'].Add_Click({
+    $script:ui['DriverUpdatesGrid'].ItemsSource = $null
+    $script:ui['BtnDriverInstall'].IsEnabled = $false
+    Start-TurboWorker 'Поиск драйверов' 'Workers\DriverUpdates.ps1' '-Mode List'
+})
+$script:ui['DriverUpdatesGrid'].Add_SelectionChanged({
+    $entry = $script:ui['DriverUpdatesGrid'].SelectedItem
+    $script:ui['BtnDriverInstall'].IsEnabled = ($null -ne $entry -and $null -eq $script:activeProcess)
+})
+$script:ui['BtnDriverInstall'].Add_Click({
+    $entry = $script:ui['DriverUpdatesGrid'].SelectedItem
+    if ($null -eq $entry) { Show-TurboError 'Сначала выберите драйвер в списке.'; return }
+    $id = [string]$entry.UpdateId
+    if ($id -notmatch '^[a-fA-F0-9-]{36}$') { Show-TurboError 'Некорректный идентификатор обновления.'; return }
+    $response = [Windows.MessageBox]::Show($script:window,
+        "Установить через Windows Update: $($entry.Title)? Будет запрошен UAC. Сначала должна быть успешно создана точка восстановления. Согласны?",
+        'Установка драйвера', 'YesNo', 'Warning')
+    if ($response -eq 'Yes') {
+        Start-TurboWorker 'Установка драйвера' 'Workers\DriverUpdates.ps1' ("-Mode Install -UpdateId " + $id) $true
+    }
+})
+$script:ui['BtnBoostUI'].Add_Click({
+    $response = [Windows.MessageBox]::Show($script:window,
+        'Уменьшить визуальные эффекты в текущем профиле Windows? Старые значения будут сохранены для отката.',
+        'Турбо: интерфейс', 'YesNo', 'Question')
+    if ($response -eq 'Yes') { Start-TurboWorker 'Буст' 'Workers\Boost.ps1' '-Mode ApplyUI' }
+})
+$script:ui['BtnBoostPower'].Add_Click({
+    $response = [Windows.MessageBox]::Show($script:window,
+        'Включить план Высокая производительность? Это может увеличивать нагрев, шум и энергопотребление. Старый план питания сохраняется.',
+        'Турбо: производительность', 'YesNo', 'Warning')
+    if ($response -eq 'Yes') { Start-TurboWorker 'Буст' 'Workers\Boost.ps1' '-Mode ApplyPower' }
+})
+$script:ui['BtnBoostRestore'].Add_Click({
+    $response = [Windows.MessageBox]::Show($script:window,
+        'Восстановить настройки из последнего невосстановленного журнала Turbo Old PC?',
+        'Откат настроек', 'YesNo', 'Question')
+    if ($response -eq 'Yes') { Start-TurboWorker 'Буст' 'Workers\Boost.ps1' '-Mode Restore' }
+})
+$script:ui['BtnBoostHistory'].Add_Click({ Start-TurboWorker 'История бустов' 'Workers\Boost.ps1' '-Mode History' })
+
 $script:ui['BtnDeviceManager'].Add_Click({ Open-TurboShell 'devmgmt.msc' })
 $script:ui['BtnWindowsSecurity'].Add_Click({ Open-TurboShell 'windowsdefender:' 'ms-settings:windowsdefender' })
 $script:ui['BtnOemSupport'].Add_Click({
