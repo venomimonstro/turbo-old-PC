@@ -13,7 +13,7 @@ function Find-DriverUpdates {
     $session = New-WuaSession
     $searcher = $session.CreateUpdateSearcher()
     $res = $searcher.Search("IsInstalled=0 and Type='Driver' and IsHidden=0")
-    if ([int]$res.ResultCode -notin @(2,3)) {
+    if ([int]$res.ResultCode -ne 2) {
         throw "Поиск через Windows Update завершился с кодом $($res.ResultCode)."
     }
     return [pscustomobject]@{Session=$session;Updates=$res.Updates}
@@ -79,7 +79,7 @@ try {
             $downloader = $found.Session.CreateUpdateDownloader()
             $downloader.Updates = $collection
             $dl = $downloader.Download()
-            if ([int]$dl.ResultCode -notin @(2,3) -or -not $chosen.IsDownloaded) {
+            if ([int]$dl.ResultCode -ne 2 -or [int]$dl.GetUpdateResult(0).ResultCode -ne 2 -or -not $chosen.IsDownloaded) {
                 throw "Windows Update не смог загрузить драйвер. Код: $($dl.ResultCode)."
             }
         }
@@ -93,10 +93,11 @@ try {
         $installer.Updates = $collection
         $installation = $installer.Install()
         $installCode = [int]$installation.ResultCode
+        $perUpdateCode = [int]$installation.GetUpdateResult(0).ResultCode
         $result = [pscustomobject]@{
-            Success=($installCode -eq 2); Mode='Install'; InstalledTitle=[string]$chosen.Title
-            ResultCode=$installCode; RebootRequired=[bool]$installation.RebootRequired
-            Message="Результат Windows Update: код $installCode. Перезагрузка необходима: $($installation.RebootRequired). Создана точка восстановления перед установкой. Управление восстановлением — через Windows."
+            Success=($installCode -eq 2 -and $perUpdateCode -eq 2); Mode='Install'; InstalledTitle=[string]$chosen.Title
+            ResultCode=$installCode; IndividualResultCode=$perUpdateCode; RebootRequired=[bool]$installation.RebootRequired
+            Message="Результат Windows Update: общий код $installCode, код обновления $perUpdateCode. Перезагрузка необходима: $($installation.RebootRequired). Создана точка восстановления перед установкой. Управление восстановлением — через Windows."
         }
         }
     }
