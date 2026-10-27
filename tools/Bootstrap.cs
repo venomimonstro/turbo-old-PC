@@ -16,6 +16,31 @@ internal static class Bootstrap
     [STAThread]
     private static int Main()
     {
+#if INSTALLED
+        try
+        {
+            string root = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string app = Path.Combine(root, "app", "TurboOldPC.ps1");
+            if (!File.Exists(app)) throw new FileNotFoundException("Application was not installed correctly.", app);
+            string ps = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            ProcessStartInfo psi = new ProcessStartInfo(ps,
+                "-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File \"" + app + "\"");
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.WindowStyle = ProcessWindowStyle.Hidden;
+            using (Process child = Process.Start(psi))
+            {
+                child.WaitForExit();
+                return child.ExitCode;
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Turbo Old PC", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return 1;
+        }
+#else
         string stage = null;
         try
         {
@@ -108,5 +133,6 @@ internal static class Bootstrap
                 catch { /* OS may still hold files until all readers exit. */ }
             }
         }
+#endif
     }
 }
