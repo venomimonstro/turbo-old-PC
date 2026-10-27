@@ -58,8 +58,28 @@ try {
             'install/Install.ps1','install/Uninstall.ps1')){
             if($necessary -notin $names){throw "Incomplete embedded installer payload: $necessary"}
         }
+        # Verify archive entries really match the reviewed source files, not stale builds.
+        $checkFiles=@(
+           'app\TurboOldPC.ps1','app\Turbo.Core.psm1','app\Turbo.Scanner.psm1',
+           'app\Workers\NativeScan.ps1','app\Workers\DeepCleanup.ps1',
+           'app\Workers\DriverUpdates.ps1','app\Workers\ThreatCenter.ps1',
+           'data\signatures.json','install\Install.ps1','install\Uninstall.ps1',
+           'TurboOldPC.exe'
+        )
+        foreach($relative in $checkFiles){
+           $archiveEntry=$zip.GetEntry($relative.Replace('\','/'))
+           if($null -eq $archiveEntry){throw "Missing archive entry: $relative"}
+           $source=if($relative -eq 'TurboOldPC.exe'){$artifacts[0]}else{Join-Path $root $relative}
+           $expected=(Get-FileHash -LiteralPath $source -Algorithm SHA256 -ErrorAction Stop).Hash
+           $sha=[Security.Cryptography.SHA256]::Create()
+           $stream=$archiveEntry.Open()
+           try{
+             $actual=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','')
+           }finally{$stream.Dispose();$sha.Dispose()}
+           if($actual -ne $expected){throw "Archive content changed or stale: $relative"}
+        }
     }finally{$zip.Dispose()}
-    $report.Tests+='Package content: PASS'
+    $report.Tests+='Package content and source hashes: PASS'
     $report.Pass=$true
 } catch {
     $report.Tests+=('FAILED: '+$_.Exception.Message)
