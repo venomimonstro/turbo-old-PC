@@ -48,6 +48,7 @@ try {
         $report.Files += [ordered]@{Name=$file.Name;Bytes=$file.Length;SHA256=$hash.Hash;Signature=$signature}
     }
     Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip=[IO.Compression.ZipFile]::OpenRead($artifacts[3])
     try {
         $names=@($zip.Entries | ForEach-Object {$_.FullName.Replace('\','/')})
