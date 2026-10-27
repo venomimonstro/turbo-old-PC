@@ -54,12 +54,14 @@ function Get-TurboHardware {
             $totalGb = [math]::Round(([double]$logical.Size / 1GB), 1)
         }
     } catch { }
+    $cpuLoad = -1
+    if ($null -ne $cpu.LoadPercentage) { $cpuLoad = [int]$cpu.LoadPercentage }
     [pscustomobject]@{
         Manufacturer = [string]$pc.Manufacturer
         Model = [string]$pc.Model
         CPU = [string]$cpu.Name
         Cores = [int]$cpu.NumberOfCores
-        CpuLoadPercent = if ($null -ne $cpu.LoadPercentage) { [int]$cpu.LoadPercentage } else { -1 }
+        CpuLoadPercent = $cpuLoad
         MemoryGb = [math]::Round(([double]$pc.TotalPhysicalMemory / 1GB), 1)
         FreeMemoryGb = [math]::Round(([double]$os.FreePhysicalMemory / 1MB), 1)
         Windows = [string]$os.Caption
