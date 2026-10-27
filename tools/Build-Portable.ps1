@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([string]$Version = '0.3.0')
+param([string]$Version = '0.4.0')
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $dist = Join-Path $root 'dist'
@@ -11,6 +11,8 @@ $files = @(
     'app\Workers\Diagnostics.ps1', 'app\Workers\DefenderScan.ps1',
     'app\Workers\Cleanup.ps1', 'app\Workers\DriverUpdates.ps1',
     'app\Workers\SecurityAudit.ps1', 'app\Workers\Boost.ps1',
+    'app\Workers\DeepCleanup.ps1', 'app\Workers\SystemRepair.ps1',
+    'app\Workers\RegistryAudit.ps1',
     'app\Turbo.Security.psm1', 'install\Install.ps1', 'install\Uninstall.ps1',
     'tests\SmokeTest.ps1', 'assets\TurboOldPC.ico'
 )
