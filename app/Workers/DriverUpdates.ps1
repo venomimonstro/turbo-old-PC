@@ -54,11 +54,17 @@ try {
             throw 'Обновление не является драйвером.'
         }
         if ([bool]$chosen.IsInstalled -or [bool]$chosen.IsHidden) { throw 'Обновление уже установлено или скрыто.' }
-        # Fail closed: installing a driver without a new restore checkpoint is not allowed.
+        # Fail closed: both creation and verification of a NEW restore point are required.
         try {
+            $beforePoints = @(Get-ComputerRestorePoint -ErrorAction Stop | Sort-Object SequenceNumber -Descending | Select-Object -First 1)
+            $beforeSeq = if ($beforePoints.Count -gt 0) { [int64]$beforePoints[0].SequenceNumber } else { [int64]-1 }
             Checkpoint-Computer -Description ('TurboOldPC driver '+$UpdateId) -RestorePointType MODIFY_SETTINGS -ErrorAction Stop
+            $afterPoints = @(Get-ComputerRestorePoint -ErrorAction Stop | Sort-Object SequenceNumber -Descending | Select-Object -First 1)
+            if ($afterPoints.Count -eq 0 -or [int64]$afterPoints[0].SequenceNumber -le $beforeSeq) {
+                throw 'Новая контрольная точка не подтверждена системой.'
+            }
         } catch {
-            throw 'Не удалось создать точку восстановления. Установка отменена. Проверьте защиту системы; Windows ограничивает создание точек чаще одного раза в день. Причина: ' + $_.Exception.Message
+            throw 'Не удалось создать и подтвердить НОВУЮ точку восстановления. Установка отменена. Проверьте защиту системы; Windows может ограничивать частоту создания точек. Причина: ' + $_.Exception.Message
         }
         if (-not $chosen.EulaAccepted) { $chosen.AcceptEula() }
         $collection = New-Object -ComObject 'Microsoft.Update.UpdateColl'
