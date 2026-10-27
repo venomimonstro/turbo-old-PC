@@ -338,10 +338,11 @@ function Format-TurboReport($snap) {
     if ($null -ne $snap.Hardware) {
         $h = $snap.Hardware
         $lines.Add('Ноутбук: ' + $h.Manufacturer + ' ' + $h.Model)
-        $lines.Add('CPU: ' + $h.CPU + '; ядра: ' + $h.Cores)
+        $lines.Add('CPU: ' + $h.CPU + '; ядра: ' + $h.Cores + '; нагрузка во время проверки: ' + $h.CpuLoadPercent + '%')
         $lines.Add('RAM: ' + $h.MemoryGb + ' ГБ; свободно при проверке: ' + $h.FreeMemoryGb + ' ГБ')
         $lines.Add('ОС: ' + $h.Windows + ' ' + $h.Version)
         $lines.Add('Системный накопитель: ' + $h.Disk + ' / ' + $h.DiskType + ' / ' + $h.DiskBus)
+        $lines.Add('Здоровье диска по Windows (ориентировочно): ' + $h.DiskHealth)
         $lines.Add('Свободно на ' + $h.SystemDrive + ': ' + $h.FreeGb + ' из ' + $h.TotalGb + ' ГБ')
     } else { $lines.Add('Характеристики недоступны: ' + $snap.Error) }
     $lines.Add('')
@@ -391,7 +392,7 @@ function Show-TurboSnapshot($snap) {
         $issues = @($snap.Recommendations)
         $script:ui['HealthGlyph'].Text = '✓'
         $script:ui['HealthLabel'].Text = 'Анализ компьютера готов'
-        $script:ui['HealthNote'].Text = "Модель: $($h.Manufacturer) $($h.Model). RAM: $($h.MemoryGb) ГБ. Диск: $($h.DiskType). Рекомендаций: $($issues.Count). Они приведены ниже."
+        $script:ui['HealthNote'].Text = "Модель: $($h.Manufacturer) $($h.Model). RAM: $($h.MemoryGb) ГБ. Диск: $($h.DiskType) ($($h.DiskHealth)). Рекомендаций: $($issues.Count). Они приведены ниже."
     }
     $script:ui['StartupGrid'].ItemsSource = @($snap.Startup)
     $script:ui['DriversGrid'].ItemsSource = @($snap.DriverProblems)
@@ -400,7 +401,7 @@ function Show-TurboSnapshot($snap) {
     $script:ui['ServiceGrid'].ItemsSource = @($snap.ServiceAudit)
 }
 function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$extraParams = '') {
-    if ($null -ne $script:activeProcess -and -not $script:activeProcess.HasExited) {
+    if ($null -ne $script:activeProcess) {
         Show-TurboError 'Дождитесь завершения текущей операции.'
         return
     }
