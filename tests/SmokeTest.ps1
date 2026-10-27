@@ -30,6 +30,12 @@ foreach ($required in @('MainTabs','BtnAnalyze','BtnScan','BtnScanFull','BtnTemp
     if ($required -notin $names) { throw "В XAML отсутствует элемент: $required" }
 }
 Write-Host 'PASS: GUI XML and essential controls'
+# Load the real WPF window in a fresh STA process without opening it to users.
+$guiProbe=@(& (Join-Path $PSHOME 'powershell.exe') -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $root 'app\TurboOldPC.ps1') -SmokeUi 2>&1)
+if($LASTEXITCODE -ne 0 -or -not (($guiProbe -join ' ') -match 'GUI WPF smoke passed')){
+    throw ('WPF UI bootstrap failed: ' + ($guiProbe -join '; '))
+}
+Write-Host 'PASS: actual WPF GUI initialization and event bindings'
 foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
  'DriverUpdatesGrid','BtnDriverInventory','BtnNativeScan','BtnClamScan','BtnClamUpdate','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
  'BtnBoostPower','BtnBoostRestore','BtnScanOffline',
