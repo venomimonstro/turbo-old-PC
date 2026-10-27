@@ -57,6 +57,8 @@ try {
         $hash = Get-FileHash -LiteralPath $exe -Algorithm SHA256
         Write-Host "SHA256: $($hash.Hash)"
     }
+    & (Join-Path $root 'tests\ReleaseGate.ps1') -Version $Version
+    if ($LASTEXITCODE -ne 0) { throw 'Release validation failed.' }
     Write-Host 'Release files are not code-signed. Test on Win10 and Win11 before public release.' -ForegroundColor Yellow
 } finally {
     if (Test-Path -LiteralPath $build) { Remove-Item -LiteralPath $build -Recurse -Force -ErrorAction SilentlyContinue }
