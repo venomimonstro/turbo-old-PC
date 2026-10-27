@@ -192,6 +192,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnScan" Style="{StaticResource ActionButton}" Content="Быстрая проверка"/>
         <Button x:Name="BtnScanFull" Style="{StaticResource ActionButton}" Content="Полная проверка"/>
         <Button x:Name="BtnScanOffline" Style="{StaticResource ActionButton}" Content="Офлайн-проверка"/>
+        <Button x:Name="BtnSecondOpinion" Style="{StaticResource ActionButton}" Content="Вторая проверка Microsoft"/>
         <Button x:Name="BtnWindowsSecurity" Style="{StaticResource ActionButton}" Content="Журнал защиты Windows"/>
        </WrapPanel>
        <TextBox x:Name="SecurityText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
@@ -344,7 +345,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -605,6 +606,15 @@ $script:ui['BtnScanFull'].Add_Click({
         $script:ui['SecurityText'].Text = 'Запущена полная проверка Microsoft Defender. Ждите завершения фоновой операции.'
         Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1' '-ScanType FullScan'
     }
+})
+$script:ui['BtnScanOffline'].Add_Click({
+    [void][Windows.MessageBox]::Show($script:window,
+        'Автономная проверка Microsoft Defender может сразу перезагрузить компьютер. Сохраните документы, проверьте наличие ключа восстановления BitLocker и состояние WinRE. В открывшемся окне: Защита от вирусов и угроз → Параметры сканирования → Автономная проверка.',
+        'Офлайн-проверка с перезапуском','OK','Warning')
+    Open-TurboShell 'windowsdefender:' 'ms-settings:windowsdefender'
+})
+$script:ui['BtnSecondOpinion'].Add_Click({
+    Open-TurboShell 'https://learn.microsoft.com/en-us/defender-endpoint/safety-scanner-download'
 })
 $script:ui['BtnStartupSettings'].Add_Click({ Open-TurboShell 'ms-settings:startupapps' 'taskmgr.exe' })
 $script:ui['BtnAppsSettings'].Add_Click({ Open-TurboShell 'ms-settings:appsfeatures' 'appwiz.cpl' })
