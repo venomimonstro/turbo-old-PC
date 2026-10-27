@@ -12,7 +12,7 @@ $files = @(
     'app\Workers\Cleanup.ps1', 'app\Workers\DriverUpdates.ps1',
     'app\Workers\SecurityAudit.ps1', 'app\Workers\Boost.ps1',
     'app\Workers\DeepCleanup.ps1', 'app\Workers\SystemRepair.ps1',
-    'app\Workers\RegistryAudit.ps1',
+    'app\Workers\RegistryAudit.ps1', 'app\Workers\SpaceMap.ps1',
     'app\Turbo.Security.psm1', 'install\Install.ps1', 'install\Uninstall.ps1',
     'tests\SmokeTest.ps1', 'assets\TurboOldPC.ico'
 )
