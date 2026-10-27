@@ -6,7 +6,7 @@ $dist = Join-Path $root 'dist'
 $destination = Join-Path $dist ("TurboOldPC-" + $Version + "-portable.zip")
 $staging = Join-Path ([IO.Path]::GetTempPath()) ('TurboOldPC-package-' + [guid]::NewGuid().ToString('N'))
 $files = @(
-    'Start.cmd', 'Install.cmd', 'Turbo Old PC.vbs', 'README.md', 'LICENSE',
+    'Start.cmd', 'Install.cmd', 'Turbo Old PC.vbs', 'README.md', 'AUDIT.md', 'LICENSE',
     'app\TurboOldPC.ps1', 'app\Turbo.Core.psm1',
     'app\Workers\Diagnostics.ps1', 'app\Workers\DefenderScan.ps1',
     'app\Workers\Cleanup.ps1', 'app\Workers\DriverUpdates.ps1',
