@@ -195,6 +195,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnScanOffline" Style="{StaticResource ActionButton}" Content="Офлайн-проверка"/>
         <Button x:Name="BtnSecondOpinion" Style="{StaticResource ActionButton}" Content="Вторая проверка Microsoft"/>
         <Button x:Name="BtnNativeScan" Style="{StaticResource ActionButton}" Content="Независимая проверка папки"/>
+        <Button x:Name="BtnClamScan" Style="{StaticResource ActionButton}" Content="Вторая проверка ClamAV"/>
         <Button x:Name="BtnDefenderUpdate" Style="{StaticResource ActionButton}" Content="Обновить базу вирусов"/>
         <Button x:Name="BtnDefenderThreats" Style="{StaticResource ActionButton}" Content="Обнаружения"/>
         <Button x:Name="BtnDefenderRemediate" Style="{StaticResource ActionButton}" Content="Обработать активные угрозы"/>
@@ -375,7 +376,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -558,6 +559,10 @@ $script:timer.Add_Tick({
                 $script:ui['BtnTempClean'].IsEnabled = $false
                 Set-TurboStatus 'Очистка завершена.'
             }
+            'ClamAV' {
+                $script:ui['SecurityText'].Text = [string]$result.Message
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Собственный сканер' {
                 $lines=New-Object 'System.Collections.Generic.List[string]'
                 $scan=$result.Scan
@@ -712,6 +717,16 @@ $script:ui['BtnScanFull'].Add_Click({
         $script:ui['SecurityText'].Text = 'Запущена полная проверка Microsoft Defender. Ждите завершения фоновой операции.'
         Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1' '-ScanType FullScan'
     }
+})
+$script:ui['BtnClamScan'].Add_Click({
+    $folder=New-Object System.Windows.Forms.FolderBrowserDialog
+    $folder.Description='Выберите каталог для проверки через установленный ClamAV'
+    try{
+        if($folder.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){
+            $path=$folder.SelectedPath.Replace("'","''")
+            Start-TurboWorker 'ClamAV' 'Workers\ClamAvScan.ps1' ("-Mode Scan -ScanRoot '"+$path+"'")
+        }
+    }finally{$folder.Dispose()}
 })
 $script:ui['BtnNativeScan'].Add_Click({
     $picker=New-Object System.Windows.Forms.FolderBrowserDialog
