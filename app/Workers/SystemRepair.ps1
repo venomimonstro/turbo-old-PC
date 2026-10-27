@@ -8,6 +8,19 @@ try{
  $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
  $principal=New-Object Security.Principal.WindowsPrincipal($identity)
  if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'Для обслуживания Windows необходимы права администратора.'}
+ if($Mode -ne 'Audit'){
+  try{
+   $previous=@(Get-ComputerRestorePoint -ErrorAction Stop|Sort-Object SequenceNumber -Descending|Select-Object -First 1)
+   $previousSeq=if($previous.Count -gt 0){[int64]$previous[0].SequenceNumber}else{[int64]-1}
+   Checkpoint-Computer -Description ('TurboOldPC pre-repair '+$Mode) -RestorePointType MODIFY_SETTINGS -ErrorAction Stop
+   $current=@(Get-ComputerRestorePoint -ErrorAction Stop|Sort-Object SequenceNumber -Descending|Select-Object -First 1)
+   if($current.Count -eq 0 -or [int64]$current[0].SequenceNumber -le $previousSeq){
+    throw 'Не подтверждено создание новой точки восстановления.'
+   }
+  }catch{
+   throw 'Восстановление отменено: невозможно создать и подтвердить новую точку восстановления Windows. Причина: '+$_.Exception.Message
+  }
+ }
  $logDir=Join-Path $env:LOCALAPPDATA 'TurboOldPC\RepairLogs'
  [void][IO.Directory]::CreateDirectory($logDir)
  $logPath=Join-Path $logDir ('repair-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.txt')
