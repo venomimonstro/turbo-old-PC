@@ -120,6 +120,41 @@ if ($FullDiagnostics) {
 }
 Write-Host 'ALL SMOKE TESTS PASSED'
 
+# Deep cleanup: sandbox every permitted location, confirm preview and deletion are scoped.
+$sandboxRoot=Join-Path ([IO.Path]::GetTempPath()) ('TurboCleanup-Sandbox-'+[guid]::NewGuid().ToString('N'))
+$originalLocal=$env:LOCALAPPDATA
+$originalRoot=$env:SystemRoot
+$originalProgramData=$env:ProgramData
+try {
+ $env:LOCALAPPDATA=Join-Path $sandboxRoot 'profile'
+ $env:SystemRoot=Join-Path $sandboxRoot 'fakeWindows'
+ $env:ProgramData=Join-Path $sandboxRoot 'fakeProgramData'
+ $tempRoot=Join-Path $env:LOCALAPPDATA 'Temp'
+ [void][IO.Directory]::CreateDirectory($tempRoot)
+ [void][IO.Directory]::CreateDirectory((Join-Path $env:SystemRoot 'Temp'))
+ $stale=Join-Path $tempRoot 'older-than-two-days.txt'
+ $recent=Join-Path $tempRoot 'recent-file.txt'
+ [IO.File]::WriteAllText($stale,'old disposable sandbox file')
+ [IO.File]::WriteAllText($recent,'recent sandbox file must survive')
+ [IO.File]::SetLastWriteTime($stale,(Get-Date).AddDays(-7))
+ $drive=([IO.Path]::GetPathRoot($sandboxRoot)).Substring(0,2)
+ $analysisReport=Join-Path $sandboxRoot 'analysis.json'
+ $cleanReport=Join-Path $sandboxRoot 'clean.json'
+ & (Join-Path $root 'app\Workers\DeepCleanup.ps1') -Mode Analyze -Drive $drive -OutputPath $analysisReport
+ $analysis=Get-Content -LiteralPath $analysisReport -Raw -Encoding UTF8|ConvertFrom-Json -ErrorAction Stop
+ if(-not $analysis.Success -or [int]$analysis.Count -ne 1){throw 'Deep cleanup fixture preview mismatch.'}
+ if(-not (Test-Path -LiteralPath $stale)){throw 'Deep cleanup preview unexpectedly deleted a file.'}
+ & (Join-Path $root 'app\Workers\DeepCleanup.ps1') -Mode Clean -Drive $drive -OutputPath $cleanReport -ManifestPath ([string]$analysis.ManifestPath)
+ $clean=Get-Content -LiteralPath $cleanReport -Raw -Encoding UTF8|ConvertFrom-Json -ErrorAction Stop
+ if(-not $clean.Success -or [int]$clean.Deleted -ne 1 -or
+    (Test-Path -LiteralPath $stale) -or -not (Test-Path -LiteralPath $recent)){
+     throw 'Deep cleanup did not preserve recent files.'
+ }
+ Write-Host 'PASS: deep cleanup sandbox analyze and delete only permitted old file'
+} finally {
+ $env:LOCALAPPDATA=$originalLocal;$env:SystemRoot=$originalRoot;$env:ProgramData=$originalProgramData
+ Remove-Item -LiteralPath $sandboxRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
 # Preview must not inspect arbitrary files when the selected drive is not valid.
 $jobPath = Join-Path ([IO.Path]::GetTempPath()) ('TurboOldPC-invalid-'+[guid]::NewGuid().ToString('N')+'.json')
 try {
