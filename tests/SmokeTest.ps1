@@ -31,9 +31,9 @@ foreach ($required in @('MainTabs','BtnAnalyze','BtnScan','BtnScanFull','BtnTemp
 }
 Write-Host 'PASS: GUI XML and essential controls'
 foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
- 'DriverUpdatesGrid','BtnDriverInventory','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
+ 'DriverUpdatesGrid','BtnDriverInventory','BtnNativeScan','BtnClamScan','BtnClamUpdate','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
  'BtnBoostPower','BtnBoostRestore','BtnScanOffline',
- 'NavRepair','BtnDriverDownload','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard')) {
+ 'NavRepair','BtnDriverDownload','BtnDiskCleanupWizard','BtnCancelWorker','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard')) {
     if ($required -notin $names) { throw "Missing v0.3 dashboard control: $required" }
 }
 Write-Host 'PASS: security/driver/boost controls present'
@@ -179,6 +179,22 @@ foreach ($requiredFile in @('app\Turbo.Scanner.psm1','data\signatures.json')) {
     $leaf=[IO.Path]::GetFileName($requiredFile)
     if (-not $builder.Contains($leaf)) { throw "Not packaged: $leaf" }
 }
+# Every file required by the installer must be present in the portable ZIP list.
+$installerText=Get-Content -LiteralPath (Join-Path $root 'install\Install.ps1') -Raw -Encoding UTF8
+$installationList=[regex]::Match($installerText,'(?s)\$required=@\((.*?)\)\s*\[void\]')
+if(-not $installationList.Success){throw 'Installer required-file manifest missing.'}
+$needed=@([regex]::Matches($installationList.Groups[1].Value,"'([^']+)'")|
+ ForEach-Object {$_.Groups[1].Value})
+foreach($item in $needed){
+ if($item -eq 'TurboOldPC.exe'){continue}
+ if(-not (Test-Path -LiteralPath (Join-Path $root $item) -PathType Leaf)){
+   throw "Installer needs a file that does not exist: $item"
+ }
+ if(-not $builder.Contains("'"+$item+"'")){
+   throw "Installer requires a file omitted from the portable ZIP: $item"
+ }
+}
+Write-Host "PASS: all $($needed.Count) installer components are present in portable packaging"
 foreach ($relative in $workerRefs) {
     $diskPath = Join-Path (Join-Path $root 'app') $relative
     if (-not (Test-Path -LiteralPath $diskPath -PathType Leaf)) {
