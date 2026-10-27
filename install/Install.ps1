@@ -30,7 +30,7 @@ foreach ($item in @('Start.cmd','Turbo Old PC.vbs','TurboOldPC.exe','README.md',
         Copy-Item -LiteralPath $from -Destination (Join-Path $destination $item) -Force -ErrorAction Stop
     }
 }
-foreach ($folder in @('app','app\Workers','install','assets')) {
+foreach ($folder in @('app','app\Workers','install','assets','data')) {
     $original = Join-Path $source $folder
     $target = Join-Path $destination $folder
     foreach ($entry in @(Get-ChildItem -LiteralPath $original -File -ErrorAction Stop)) {
