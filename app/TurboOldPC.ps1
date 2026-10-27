@@ -213,6 +213,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnTempPreview" Style="{StaticResource ActionButton}" Content="Посчитать мусор"/>
         <Button x:Name="BtnTempClean" Style="{StaticResource ActionButton}" Content="Очистить с подтверждением" IsEnabled="False"/>
         <Button x:Name="BtnDeepAnalyze" Style="{StaticResource ActionButton}" Content="Глубокий анализ диска"/>
+        <Button x:Name="BtnSpaceMap" Style="{StaticResource ActionButton}" Content="Куда ушло место?"/>
         <Button x:Name="BtnDeepClean" Style="{StaticResource ActionButton}" Content="Удалить найденное" IsEnabled="False"/>
         <Button x:Name="BtnStorageSense" Style="{StaticResource ActionButton}" Content="Очистка Windows"/>
        </WrapPanel>
@@ -367,7 +368,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -581,6 +582,22 @@ $script:timer.Add_Tick({
                 $script:ui['BtnDeepClean'].IsEnabled = ($result.Count -gt 0)
                 Set-TurboStatus ([string]$result.Message)
             }
+            'Карта диска' {
+                $rows=New-Object 'System.Collections.Generic.List[string]'
+                $rows.Add("Просмотрено файлов: $($result.ScannedFiles). Пропущено каталогов: $($result.SkippedFolders).")
+                if ($result.Truncated) { $rows.Add('Достигнут предел анализа. Результаты неполные.') }
+                $rows.Add('КРУПНЕЙШИЕ ПАПКИ В КОРНЕ:')
+                foreach($folder in @($result.Folders)) {
+                    $rows.Add(('{0}: {1} ГБ' -f $folder.Name,[math]::Round(([double]$folder.Bytes/1GB),2)))
+                }
+                $rows.Add('ФАЙЛЫ ОТ 100 МБ:')
+                foreach($f in @($result.Largest)){
+                    $rows.Add(('{0} ГБ — {1}' -f [math]::Round(([double]$f.SizeBytes/1GB),2),$f.Path))
+                }
+                $rows.Add('Никакие файлы не удалены. Проверяйте назначение крупных файлов перед любым ручным удалением.')
+                $script:ui['CleanupText'].Text = $rows -join [Environment]::NewLine
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Глубокая очистка' {
                 $mb = [math]::Round(([double]$result.Bytes / 1MB),1)
                 $script:ui['CleanupText'].Text = "Удалено $($result.Deleted) файлов. Пропущено: $($result.Skipped). Освобождено около $mb МБ."
@@ -665,6 +682,12 @@ $script:ui['BtnSecondOpinion'].Add_Click({
     Open-TurboShell 'https://learn.microsoft.com/en-us/defender-endpoint/safety-scanner-download'
 })
 $script:ui['BtnRegistryAudit'].Add_Click({ Start-TurboWorker 'Аудит реестра' 'Workers\RegistryAudit.ps1' })
+$script:ui['BtnSpaceMap'].Add_Click({
+    $drive=[Microsoft.VisualBasic.Interaction]::InputBox('Буква диска для карты занятого места:','Карта диска',$script:selectedDisk)
+    if($drive -notmatch '^[A-Za-z]:$'){Show-TurboError 'Введите букву диска, например C:';return}
+    $script:selectedDisk=$drive.ToUpperInvariant()
+    Start-TurboWorker 'Карта диска' 'Workers\SpaceMap.ps1' ('-Drive '+$script:selectedDisk)
+})
 $script:ui['BtnDeepAnalyze'].Add_Click({
     $choice = [Microsoft.VisualBasic.Interaction]::InputBox('Буква диска для анализа (например C:):','Глубокая очистка',$script:selectedDisk)
     if ($choice -notmatch '^[A-Za-z]:$') { Show-TurboError 'Введите только букву диска: C: или D:'; return }
