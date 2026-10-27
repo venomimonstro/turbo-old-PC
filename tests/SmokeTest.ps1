@@ -109,3 +109,29 @@ try {
 } finally {
     Remove-Item -LiteralPath $jobPath -Force -ErrorAction SilentlyContinue
 }
+
+# Release package contract. Every worker wired into the UI must be included in packaging.
+$mainGui = Get-Content -LiteralPath (Join-Path $root 'app\TurboOldPC.ps1') -Raw -Encoding UTF8
+$builder = Get-Content -LiteralPath (Join-Path $root 'tools\Build-Portable.ps1') -Raw -Encoding UTF8
+$workerRefs = @([regex]::Matches($mainGui, "Workers\\[A-Za-z0-9]+\.ps1") |
+    ForEach-Object { $_.Value } | Sort-Object -Unique)
+foreach ($relative in $workerRefs) {
+    $diskPath = Join-Path (Join-Path $root 'app') $relative
+    if (-not (Test-Path -LiteralPath $diskPath -PathType Leaf)) {
+        throw "Missing referenced worker: $relative"
+    }
+    $basename = [IO.Path]::GetFileName($relative)
+    if (-not $builder.Contains($basename)) {
+        throw "Portable package would omit $basename"
+    }
+}
+foreach ($file in @('tools\Bootstrap.cs','tools\Build-WindowsExe.ps1','install\Install.ps1')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $root $file) -PathType Leaf)) {
+        throw "Missing EXE build prerequisite: $file"
+    }
+}
+$installerScript = Get-Content -LiteralPath (Join-Path $root 'install\Install.ps1') -Raw -Encoding UTF8
+if (-not $installerScript.Contains('TurboOldPC.exe')) {
+    throw 'Installer is not configured to use the installed executable.'
+}
+Write-Host "PASS: all $($workerRefs.Count) GUI worker scripts are packaged and EXE contract exists"
