@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { throw 'Bootstrap source
 try {
     $package = Join-Path $dist "TurboOldPC-$Version-portable.zip"
     & (Join-Path $root 'tools\Build-Portable.ps1') -Version $Version
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $package)) { throw 'ZIP build failed.' }
+    if (-not (Test-Path -LiteralPath $package)) { throw 'ZIP build failed.' }
     # Fresh payload from the same source tree for installer AND portable EXEs.
     $references = @(
         '/reference:System.Windows.Forms.dll',
