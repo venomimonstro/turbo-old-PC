@@ -3,15 +3,11 @@ param([Parameter(Mandatory=$true)][ValidateSet('Status','Scan')][string]$Mode,
 [Parameter(Mandatory=$true)][string]$OutputPath,[string]$ScanRoot)
 $ErrorActionPreference='Stop'
 try {
- $options=@(
-  (Join-Path $env:ProgramFiles 'ClamAV\clamscan.exe'),
-  (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'ClamAV\clamscan.exe')
- )
- $available=@($options|Where-Object{$_ -and (Test-Path -LiteralPath $_ -PathType Leaf)})
- if($available.Count -eq 0){
-  $cmd=Get-Command clamscan.exe -ErrorAction SilentlyContinue
-  if($cmd){$available=@($cmd.Source)}
+ $options=New-Object 'System.Collections.Generic.List[string]'
+ foreach($folder in @([Environment]::GetEnvironmentVariable('ProgramFiles'),[Environment]::GetEnvironmentVariable('ProgramFiles(x86)'))){
+  if(-not [string]::IsNullOrWhiteSpace($folder)){$options.Add((Join-Path $folder 'ClamAV\clamscan.exe'))}
  }
+ $available=@($options|Where-Object{$_ -and (Test-Path -LiteralPath $_ -PathType Leaf)})
  if($available.Count -eq 0){throw 'ClamAV не установлен. Скачайте официальный Windows-дистрибутив на clamav.net/download, настройте freshclam.conf и обновите сигнатуры.'}
  $bin=[string]$available[0]
  if($Mode -eq 'Status'){
