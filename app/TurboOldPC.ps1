@@ -194,6 +194,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnScanFull" Style="{StaticResource ActionButton}" Content="Полная проверка"/>
         <Button x:Name="BtnScanOffline" Style="{StaticResource ActionButton}" Content="Офлайн-проверка"/>
         <Button x:Name="BtnSecondOpinion" Style="{StaticResource ActionButton}" Content="Вторая проверка Microsoft"/>
+        <Button x:Name="BtnNativeScan" Style="{StaticResource ActionButton}" Content="Независимая проверка папки"/>
         <Button x:Name="BtnDefenderUpdate" Style="{StaticResource ActionButton}" Content="Обновить базу вирусов"/>
         <Button x:Name="BtnDefenderThreats" Style="{StaticResource ActionButton}" Content="Обнаружения"/>
         <Button x:Name="BtnDefenderRemediate" Style="{StaticResource ActionButton}" Content="Обработать активные угрозы"/>
@@ -362,6 +363,7 @@ Add-Type -AssemblyName WindowsBase
 </Window>
 '@
 Add-Type -AssemblyName Microsoft.VisualBasic
+Add-Type -AssemblyName System.Windows.Forms
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $script:window = [Windows.Markup.XamlReader]::Load($reader)
 $iconPath = Join-Path $PSScriptRoot '..\assets\TurboOldPC.ico'
@@ -372,7 +374,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -555,6 +557,17 @@ $script:timer.Add_Tick({
                 $script:ui['BtnTempClean'].IsEnabled = $false
                 Set-TurboStatus 'Очистка завершена.'
             }
+            'Собственный сканер' {
+                $lines=New-Object 'System.Collections.Generic.List[string]'
+                $scan=$result.Scan
+                $lines.Add([string]$result.Message)
+                foreach($finding in @($scan.Findings)){
+                    $lines.Add("Совпадение: $($finding.Name); SHA256: $($finding.SHA256); файл: $($finding.Path)")
+                }
+                $lines.Add('Совпадение сигнатуры — повод проверить Defender. Встроенный сканер проверяет только хеши, не имеет защиты в реальном времени и не заменяет антивирус.')
+                $script:ui['SecurityText'].Text=$lines -join [Environment]::NewLine
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Центр угроз' {
                 $lines=New-Object 'System.Collections.Generic.List[string]'
                 $lines.Add([string]$result.Message)
@@ -695,6 +708,17 @@ $script:ui['BtnScanFull'].Add_Click({
         $script:ui['SecurityText'].Text = 'Запущена полная проверка Microsoft Defender. Ждите завершения фоновой операции.'
         Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1' '-ScanType FullScan'
     }
+})
+$script:ui['BtnNativeScan'].Add_Click({
+    $picker=New-Object System.Windows.Forms.FolderBrowserDialog
+    $picker.Description='Выберите папку для независимого сигнатурного сканирования'
+    $picker.ShowNewFolderButton=$false
+    try {
+        if($picker.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+            $path=$picker.SelectedPath.Replace("'","''")
+            Start-TurboWorker 'Собственный сканер' 'Workers\NativeScan.ps1' ("-Mode Scan -ScanRoot '"+$path+"'")
+        }
+    } finally { $picker.Dispose() }
 })
 $script:ui['BtnDefenderUpdate'].Add_Click({ Start-TurboWorker 'Центр угроз' 'Workers\ThreatCenter.ps1' '-Mode Update' })
 $script:ui['BtnDefenderThreats'].Add_Click({ Start-TurboWorker 'Центр угроз' 'Workers\ThreatCenter.ps1' '-Mode Threats' })
