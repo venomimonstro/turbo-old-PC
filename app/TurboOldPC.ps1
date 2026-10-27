@@ -275,6 +275,7 @@ Add-Type -AssemblyName WindowsBase
        <WrapPanel Grid.Row="3" Margin="0,12,0,0">
         <Button x:Name="BtnDriverInventory" Style="{StaticResource ActionButton}" Content="Установленные драйверы"/>
         <Button x:Name="BtnDriverSearch" Style="{StaticResource ActionButton}" Content="Найти драйверы"/>
+        <Button x:Name="BtnDriverDownload" Style="{StaticResource ActionButton}" Content="Скачать выбранный" IsEnabled="False"/>
         <Button x:Name="BtnDriverInstall" Style="{StaticResource ActionButton}" Content="Установить выбранный" IsEnabled="False"/>
         <Button x:Name="BtnDriversUpdate" Style="{StaticResource ActionButton}" Content="Windows Update"/>
         <Button x:Name="BtnOemSupport" Style="{StaticResource ActionButton}" Content="Сайт производителя"/>
@@ -374,7 +375,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverInstall')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -595,6 +596,9 @@ $script:timer.Add_Tick({
                 $script:ui['BtnDriverInstall'].IsEnabled = $false
                 Set-TurboStatus ([string]$result.Message)
             }
+            'Скачивание драйвера' {
+                Set-TurboStatus ([string]$result.Message)
+            }
             'Установка драйвера' {
                 $script:ui['BtnDriverInstall'].IsEnabled = $false
                 $script:ui['DriverUpdatesGrid'].ItemsSource = $null
@@ -793,6 +797,14 @@ $script:ui['BtnDriverSearch'].Add_Click({
 $script:ui['DriverUpdatesGrid'].Add_SelectionChanged({
     $entry = $script:ui['DriverUpdatesGrid'].SelectedItem
     $script:ui['BtnDriverInstall'].IsEnabled = ($null -ne $entry -and $null -eq $script:activeProcess)
+    $script:ui['BtnDriverDownload'].IsEnabled = ($null -ne $entry -and $null -eq $script:activeProcess)
+})
+$script:ui['BtnDriverDownload'].Add_Click({
+    $entry=$script:ui['DriverUpdatesGrid'].SelectedItem
+    if ($null -eq $entry) { Show-TurboError 'Сначала выберите драйвер';return }
+    $id=[string]$entry.UpdateId
+    if ($id -notmatch '^[a-fA-F0-9-]{36}$') { Show-TurboError 'Неверный идентификатор драйвера';return }
+    Start-TurboWorker 'Скачивание драйвера' 'Workers\DriverUpdates.ps1' ("-Mode Download -UpdateId " + $id + " -Revision " + [int]$entry.Revision) $true
 })
 $script:ui['BtnDriverInstall'].Add_Click({
     $entry = $script:ui['DriverUpdatesGrid'].SelectedItem
@@ -803,7 +815,7 @@ $script:ui['BtnDriverInstall'].Add_Click({
         "Установить через Windows Update: $($entry.Title)? Будет запрошен UAC. Сначала должна быть успешно создана точка восстановления. Согласны?",
         'Установка драйвера', 'YesNo', 'Warning')
     if ($response -eq 'Yes') {
-        Start-TurboWorker 'Установка драйвера' 'Workers\DriverUpdates.ps1' ("-Mode Install -UpdateId " + $id) $true
+        Start-TurboWorker 'Установка драйвера' 'Workers\DriverUpdates.ps1' ("-Mode Install -UpdateId " + $id + " -Revision " + [int]$entry.Revision) $true
     }
 })
 $script:ui['BtnBoostUI'].Add_Click({
