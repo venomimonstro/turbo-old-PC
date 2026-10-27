@@ -178,7 +178,7 @@ function New-TurboSnapshot {
         Startup = @(Get-TurboStartup)
         DriverProblems = @(Get-TurboDriverProblems)
         Software = @(Get-TurboSoftware)
-        Defender = Get-TurboDefender
+        Defender = (Get-TurboDefender)
         Recommendations = @()
         Error = $errorText
     }
@@ -226,6 +226,9 @@ function Clear-TurboTemp {
     $root = [IO.Path]::GetFullPath([string]$Preview.Root).TrimEnd('\')
     $expected = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'Temp')).TrimEnd('\')
     if (-not $root.Equals($expected, [StringComparison]::OrdinalIgnoreCase)) { throw 'Папка очистки не соответствует разрешённой папке.' }
+    if (-not (Test-Path -LiteralPath $root -PathType Container)) {
+        return [pscustomobject]@{ Deleted=0; Failed=0; FreedBytes=[int64]0 }
+    }
     if ((Get-Item -LiteralPath $root -Force -ErrorAction Stop).Attributes -band [IO.FileAttributes]::ReparsePoint) {
         throw 'Ссылка на каталог Temp: очистка запрещена.'
     }
