@@ -8,158 +8,288 @@ Add-Type -AssemblyName WindowsBase
 [xml]$xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="Turbo Old PC — диагностика и ускорение" Width="1010" Height="720"
- MinWidth="780" MinHeight="570" WindowStartupLocation="CenterScreen"
- Background="#F6F8FC" FontFamily="Segoe UI" FontSize="14" Foreground="#203044">
+ Title="Turbo Old PC — бесплатная защита и ускорение" Width="1120" Height="755"
+ MinWidth="920" MinHeight="590" WindowStartupLocation="CenterScreen"
+ Background="#F4F7F8" FontFamily="Segoe UI" FontSize="14" Foreground="#1D3344">
  <Window.Resources>
-  <Style TargetType="Button">
-   <Setter Property="Background" Value="#205FCC"/>
+  <Style TargetType="Button" x:Key="ActionButton">
+   <Setter Property="Background" Value="#08A878"/>
    <Setter Property="Foreground" Value="White"/>
+   <Setter Property="FontWeight" Value="SemiBold"/>
    <Setter Property="BorderThickness" Value="0"/>
-   <Setter Property="Padding" Value="14,9"/>
-   <Setter Property="Margin" Value="0,0,8,0"/>
-   <Setter Property="MinHeight" Value="37"/>
+   <Setter Property="Padding" Value="17,10"/>
+   <Setter Property="Margin" Value="0,0,9,8"/>
+   <Setter Property="MinHeight" Value="41"/>
    <Setter Property="Cursor" Value="Hand"/>
-   <Style.Triggers>
-    <Trigger Property="IsMouseOver" Value="True">
-     <Setter Property="Background" Value="#174B9E"/>
-    </Trigger>
-    <Trigger Property="IsEnabled" Value="False">
-     <Setter Property="Background" Value="#9BAAC0"/>
-    </Trigger>
-   </Style.Triggers>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="Button">
+      <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+       <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsMouseOver" Value="True">
+        <Setter TargetName="BtnBorder" Property="Background" Value="#058D67"/>
+       </Trigger>
+       <Trigger Property="IsEnabled" Value="False">
+        <Setter TargetName="BtnBorder" Property="Background" Value="#9EACB1"/>
+       </Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
   </Style>
-  <Style TargetType="TabItem">
-   <Setter Property="Padding" Value="13,9"/>
+  <Style TargetType="Button" x:Key="SideButton">
+   <Setter Property="Background" Value="Transparent"/>
+   <Setter Property="Foreground" Value="#D9ECE8"/>
+   <Setter Property="BorderThickness" Value="0"/>
+   <Setter Property="HorizontalContentAlignment" Value="Left"/>
+   <Setter Property="Padding" Value="17,13"/>
+   <Setter Property="Margin" Value="10,2"/>
+   <Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="FontSize" Value="14"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="Button">
+      <Border x:Name="SideBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+       <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+      </Border>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsMouseOver" Value="True">
+        <Setter TargetName="SideBorder" Property="Background" Value="#244F4D"/>
+       </Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+  <Style TargetType="Border" x:Key="PanelBorder">
+   <Setter Property="Background" Value="White"/>
+   <Setter Property="CornerRadius" Value="12"/>
+   <Setter Property="Padding" Value="18"/>
   </Style>
   <Style TargetType="DataGrid">
    <Setter Property="Background" Value="White"/>
+   <Setter Property="BorderThickness" Value="0"/>
    <Setter Property="IsReadOnly" Value="True"/>
    <Setter Property="AutoGenerateColumns" Value="True"/>
    <Setter Property="CanUserAddRows" Value="False"/>
+   <Setter Property="CanUserDeleteRows" Value="False"/>
    <Setter Property="EnableRowVirtualization" Value="True"/>
+   <Setter Property="HeadersVisibility" Value="Column"/>
+   <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+  </Style>
+  <Style TargetType="TextBox">
+   <Setter Property="BorderBrush" Value="#DEE6E8"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Padding" Value="12"/>
   </Style>
  </Window.Resources>
- <Grid Margin="18">
-  <Grid.RowDefinitions>
-   <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
-  </Grid.RowDefinitions>
-  <Border Background="#142C53" CornerRadius="12" Padding="20,16" Margin="0,0,0,14">
+ <Grid>
+  <Grid.ColumnDefinitions>
+   <ColumnDefinition Width="225"/>
+   <ColumnDefinition Width="*"/>
+  </Grid.ColumnDefinitions>
+  <Border Grid.Column="0" Background="#173B3E">
    <Grid>
-    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <StackPanel>
-     <TextBlock Text="TURBO OLD PC" Foreground="White" FontWeight="Bold" FontSize="26"/>
-     <TextBlock Text="Причины торможения, безопасная очистка и официальные драйверы"
-                Foreground="#D5E4FF" Margin="0,4,0,0"/>
+    <Grid.RowDefinitions>
+     <RowDefinition Height="Auto"/>
+     <RowDefinition Height="*"/>
+     <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Margin="24,27,12,31">
+     <StackPanel Orientation="Horizontal">
+      <Border Width="44" Height="44" CornerRadius="13" Background="#07B587" Margin="0,0,11,0">
+       <TextBlock Text="T" FontWeight="Bold" Foreground="White" FontSize="27" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+      </Border>
+      <StackPanel VerticalAlignment="Center">
+       <TextBlock Text="TURBO" FontSize="21" FontWeight="Bold" Foreground="White"/>
+       <TextBlock Text="OLD PC" FontSize="12" FontWeight="SemiBold" Foreground="#87D6C6"/>
+      </StackPanel>
+     </StackPanel>
+     <TextBlock Text="Бесплатный помощник для Windows" TextWrapping="Wrap"
+      Foreground="#BED5D2" FontSize="11" Margin="0,15,0,0"/>
     </StackPanel>
-    <Button x:Name="BtnAnalyze" Grid.Column="1" VerticalAlignment="Center" Content="Проверить компьютер"/>
+    <StackPanel Grid.Row="1">
+     <Button x:Name="NavHome" Style="{StaticResource SideButton}" Content="⌂   Главная"/>
+     <Button x:Name="NavSecurity" Style="{StaticResource SideButton}" Content="✚   Антивирус"/>
+     <Button x:Name="NavCleanup" Style="{StaticResource SideButton}" Content="◈   Очистка"/>
+     <Button x:Name="NavStartup" Style="{StaticResource SideButton}" Content="↗   Автозагрузка"/>
+     <Button x:Name="NavPerformance" Style="{StaticResource SideButton}" Content="▤   Производительность"/>
+     <Button x:Name="NavDrivers" Style="{StaticResource SideButton}" Content="⚙   Драйверы"/>
+     <Button x:Name="NavApps" Style="{StaticResource SideButton}" Content="▦   Программы"/>
+    </StackPanel>
+    <StackPanel Grid.Row="2" Margin="22,0,15,22">
+     <Border Height="1" Background="#3A6765" Margin="0,0,0,15"/>
+     <TextBlock Text="0.2.0  •  Без рекламы" Foreground="#B4D8CF" FontSize="12"/>
+     <TextBlock Text="Личные файлы не передаются" Foreground="#84AFA6" FontSize="11" Margin="0,6,0,0"/>
+    </StackPanel>
    </Grid>
   </Border>
-  <TabControl Grid.Row="1">
-   <TabItem Header="Обзор">
-    <Grid Margin="13">
-     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <TextBlock FontWeight="SemiBold" Margin="0,0,0,9" Text="Характеристики, загрузка Windows и рекомендации"/>
-     <TextBox x:Name="OverviewText" Grid.Row="1" Background="White" IsReadOnly="True"
-         Padding="13" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="13"/>
-     <WrapPanel Grid.Row="2" Margin="0,11,0,0">
-      <Button x:Name="BtnReport" Content="Сохранить отчёт"/>
-      <Button x:Name="BtnReportsFolder" Content="Папка отчётов"/>
-     </WrapPanel>
-    </Grid>
-   </TabItem>
-   <TabItem Header="Автозагрузка">
-    <Grid Margin="13">
-     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <TextBlock TextWrapping="Wrap" Margin="0,0,0,9"
-                Text="Просмотрите элементы автозапуска. Отключайте только известные вам необязательные приложения."/>
-     <DataGrid x:Name="StartupGrid" Grid.Row="1"/>
-     <Button x:Name="BtnStartupSettings" Grid.Row="2" HorizontalAlignment="Left" Margin="0,11,0,0"
-             Content="Настройки автозагрузки Windows"/>
-    </Grid>
-   </TabItem>
-   <TabItem Header="Драйверы">
-    <Grid Margin="13">
-     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <TextBlock TextWrapping="Wrap" Margin="0,0,0,9"
-                Text="Показаны устройства с кодами ошибок Windows. Для проверки актуальности драйверов используйте Windows Update или производителя."/>
-     <DataGrid x:Name="DriversGrid" Grid.Row="1"/>
-     <WrapPanel Grid.Row="2" Margin="0,11,0,0">
-      <Button x:Name="BtnDriversUpdate" Content="Windows Update"/>
-      <Button x:Name="BtnOemSupport" Content="Сайт производителя"/>
-      <Button x:Name="BtnDeviceManager" Content="Диспетчер устройств"/>
-     </WrapPanel>
-    </Grid>
-   </TabItem>
-   <TabItem Header="Программы">
-    <Grid Margin="13">
-     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <TextBlock TextWrapping="Wrap" Margin="0,0,0,9"
-                Text="Установленные программы. Утилита не удаляет подозрительное ПО по названию: так можно ошибочно удалить нужное."/>
-     <DataGrid x:Name="SoftwareGrid" Grid.Row="1"/>
-     <Button x:Name="BtnAppsSettings" Grid.Row="2" Margin="0,11,0,0" HorizontalAlignment="Left"
-             Content="Удаление приложений Windows"/>
-    </Grid>
-   </TabItem>
-   <TabItem Header="Ресурсы">
-    <Grid Margin="13">
-     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/><RowDefinition Height="2*"/>
-      <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
-      <RowDefinition Height="Auto"/>
-     </Grid.RowDefinitions>
-     <TextBlock Margin="0,0,0,7" TextWrapping="Wrap"
-       Text="Процессы по объёму RAM. CPU — суммарное процессорное время, не текущая загрузка."/>
-     <DataGrid x:Name="ProcessesGrid" Grid.Row="1"/>
-     <TextBlock Grid.Row="2" Margin="0,12,0,7" TextWrapping="Wrap"
-       Text="Автозапускаемые сторонние службы (предварительная оценка). Не отключайте антивирусы и драйверные службы."/>
-     <DataGrid x:Name="ServiceGrid" Grid.Row="3"/>
-     <Button x:Name="BtnServices" Grid.Row="4" Margin="0,10,0,0" HorizontalAlignment="Left"
-       Content="Посмотреть службы Windows"/>
-    </Grid>
-   </TabItem>
-   <TabItem Header="Очистка">
-    <StackPanel Margin="17">
-     <TextBlock Text="Временные файлы пользователя" FontSize="19" FontWeight="SemiBold"/>
-     <TextBlock TextWrapping="Wrap" Margin="0,11,0,14"
-                Text="Только файлы старше 48 часов в AppData\Local\Temp. Не трогаем системные папки, документы, браузеры и реестр. Удаление необратимо."/>
-     <WrapPanel>
-      <Button x:Name="BtnTempPreview" Content="1. Оценить объём"/>
-      <Button x:Name="BtnTempClean" Content="2. Удалить после подтверждения" IsEnabled="False"/>
-     </WrapPanel>
-     <TextBox x:Name="CleanupText" IsReadOnly="True" Background="White" Margin="0,15,0,0"
-         MinHeight="180" Padding="13" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-         Text="Сначала нажмите «Оценить объём». Ничего не удалено."/>
+  <Grid Grid.Column="1" Margin="24,23,24,18">
+   <Grid.RowDefinitions>
+    <RowDefinition Height="Auto"/>
+    <RowDefinition Height="*"/>
+    <RowDefinition Height="Auto"/>
+   </Grid.RowDefinitions>
+   <Grid Grid.Row="0" Margin="0,0,0,18">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel>
+     <TextBlock Text="Центр обслуживания компьютера" FontSize="20" FontWeight="Bold"/>
+     <TextBlock Text="Проверяйте, очищайте и исправляйте только то, что действительно нужно"
+      Foreground="#607784" Margin="0,5,0,0" FontSize="12"/>
     </StackPanel>
-   </TabItem>
-   <TabItem Header="Антивирус">
-    <StackPanel Margin="17">
-     <TextBlock Text="Microsoft Defender" FontSize="19" FontWeight="SemiBold"/>
-     <TextBlock TextWrapping="Wrap" Margin="0,11,0,14"
-                Text="Используем официальный антивирус Windows. Если активна другая защита, проверьте компьютер через неё. Сканирование может временно нагружать слабый ноутбук."/>
-     <WrapPanel>
-      <Button x:Name="BtnScan" Content="Обновить базы и проверить"/>
-      <Button x:Name="BtnWindowsSecurity" Content="Открыть Защиту Windows"/>
-     </WrapPanel>
-     <TextBox x:Name="SecurityText" IsReadOnly="True" Background="White" Margin="0,15,0,0"
-         MinHeight="180" Padding="13" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-         Text="Найденные угрозы и история лечения доступны в приложении «Безопасность Windows»."/>
-    </StackPanel>
-   </TabItem>
-  </TabControl>
-  <Border Grid.Row="2" Background="#E6EEF9" Padding="10,8" CornerRadius="7" Margin="0,13,0,0">
-   <TextBlock x:Name="StatusText" Text="Начальная проверка готовится" FontSize="12" TextWrapping="Wrap"/>
-  </Border>
+    <Button x:Name="BtnAnalyze" Grid.Column="1" Style="{StaticResource ActionButton}"
+     Content="Проверить ПК" VerticalAlignment="Center" Margin="12,0,0,0"/>
+   </Grid>
+   <TabControl x:Name="MainTabs" Grid.Row="1" BorderThickness="0" Background="Transparent">
+    <TabControl.Template>
+     <ControlTemplate TargetType="{x:Type TabControl}">
+      <ContentPresenter ContentSource="SelectedContent"/>
+     </ControlTemplate>
+    </TabControl.Template>
+    <TabItem Header="Главная">
+     <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <Border Background="#E3F6EF" CornerRadius="14" Padding="21" Margin="0,0,0,14">
+       <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="95"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border Width="78" Height="78" CornerRadius="40" Background="#12B888" HorizontalAlignment="Left" VerticalAlignment="Center">
+         <TextBlock x:Name="HealthGlyph" Text="?" Foreground="White" FontWeight="Bold" FontSize="34" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+         <TextBlock x:Name="HealthLabel" Text="Ожидание диагностики" FontSize="23" FontWeight="Bold" Foreground="#14614E"/>
+         <TextBlock x:Name="HealthNote" Text="Нажмите «Проверить ПК», чтобы увидеть причины медленной работы."
+          TextWrapping="Wrap" Foreground="#406D61" Margin="0,7,0,0"/>
+        </StackPanel>
+       </Grid>
+      </Border>
+      <Border Grid.Row="1" Style="{StaticResource PanelBorder}">
+       <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Text="Подробный анализ компьютера" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,13"/>
+        <TextBox x:Name="OverviewText" Grid.Row="1" IsReadOnly="True" Background="#FAFCFC"
+         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="13" FontFamily="Consolas"
+         Text="Идёт подготовка диагностического отчёта..."/>
+        <WrapPanel Grid.Row="2" Margin="0,12,0,0">
+         <Button x:Name="BtnReport" Style="{StaticResource ActionButton}" Content="Сохранить отчёт"/>
+         <Button x:Name="BtnReportsFolder" Style="{StaticResource ActionButton}" Content="Папка отчётов"/>
+        </WrapPanel>
+       </Grid>
+      </Border>
+     </Grid>
+    </TabItem>
+    <TabItem Header="Антивирус">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="Антивирусная проверка Windows" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" Margin="0,12,0,16" TextWrapping="Wrap" Foreground="#5A6F7C"
+        Text="Используется Microsoft Defender с его официальными антивирусными базами. Это не отдельный антивирусный движок. Полная проверка может быть долгой на HDD."/>
+       <WrapPanel Grid.Row="2">
+        <Button x:Name="BtnScan" Style="{StaticResource ActionButton}" Content="Быстрая проверка"/>
+        <Button x:Name="BtnScanFull" Style="{StaticResource ActionButton}" Content="Полная проверка"/>
+        <Button x:Name="BtnWindowsSecurity" Style="{StaticResource ActionButton}" Content="Журнал защиты Windows"/>
+       </WrapPanel>
+       <TextBox x:Name="SecurityText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
+        TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+        Text="Результаты обнаружения и карантин доступны в приложении «Безопасность Windows»."/>
+      </Grid>
+     </Border>
+    </TabItem>
+    <TabItem Header="Очистка">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="Очистка ненужных файлов" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" Margin="0,12,0,16" TextWrapping="Wrap" Foreground="#5A6F7C"
+        Text="Только временные файлы старше 48 часов в AppData\Local\Temp текущего пользователя. Не удаляем личные данные, пароли браузеров, драйверы или системные папки. Удаление необратимо."/>
+       <WrapPanel Grid.Row="2">
+        <Button x:Name="BtnTempPreview" Style="{StaticResource ActionButton}" Content="Посчитать мусор"/>
+        <Button x:Name="BtnTempClean" Style="{StaticResource ActionButton}" Content="Очистить с подтверждением" IsEnabled="False"/>
+       </WrapPanel>
+       <TextBox x:Name="CleanupText" Grid.Row="3" IsReadOnly="True" Background="#FAFCFC" Margin="0,15,0,0"
+        TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Text="Пока ничего не удалено. Сначала посчитайте объём."/>
+      </Grid>
+     </Border>
+    </TabItem>
+    <TabItem Header="Автозагрузка">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="Что запускается вместе с Windows" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" TextWrapping="Wrap" Foreground="#5A6F7C" Margin="0,10,0,14"
+        Text="Отключение неизвестной программы может нарушить работу оборудования. Отключайте только необязательные приложения."/>
+       <DataGrid x:Name="StartupGrid" Grid.Row="2"/>
+       <Button x:Name="BtnStartupSettings" Grid.Row="3" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Margin="0,12,0,0"
+        Content="Управление автозагрузкой Windows"/>
+      </Grid>
+     </Border>
+    </TabItem>
+    <TabItem Header="Производительность">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="2*"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="Кто расходует оперативную память" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" TextWrapping="Wrap" Foreground="#5A6F7C" Margin="0,10,0,11"
+        Text="Процессы по занимаемой RAM. CPU — накопленное время, не мгновенная загрузка."/>
+       <DataGrid x:Name="ProcessesGrid" Grid.Row="2"/>
+       <TextBlock Grid.Row="3" Margin="0,14,0,10" FontSize="16" FontWeight="SemiBold"
+        Text="Дополнительные службы для ручной оценки"/>
+       <DataGrid x:Name="ServiceGrid" Grid.Row="4"/>
+       <Button x:Name="BtnServices" Grid.Row="5" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Margin="0,12,0,0"
+        Content="Просмотреть службы Windows"/>
+      </Grid>
+     </Border>
+    </TabItem>
+    <TabItem Header="Драйверы">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="Проверка драйверов и оборудования" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" TextWrapping="Wrap" Foreground="#5A6F7C" Margin="0,10,0,14"
+        Text="Windows показывает устройства с ошибками. Обновляйте драйверы только через Windows Update или официальную поддержку производителя по точной модели."/>
+       <DataGrid x:Name="DriversGrid" Grid.Row="2"/>
+       <WrapPanel Grid.Row="3" Margin="0,12,0,0">
+        <Button x:Name="BtnDriversUpdate" Style="{StaticResource ActionButton}" Content="Windows Update"/>
+        <Button x:Name="BtnOemSupport" Style="{StaticResource ActionButton}" Content="Сайт производителя"/>
+        <Button x:Name="BtnDeviceManager" Style="{StaticResource ActionButton}" Content="Диспетчер устройств"/>
+       </WrapPanel>
+      </Grid>
+     </Border>
+    </TabItem>
+    <TabItem Header="Программы">
+     <Border Style="{StaticResource PanelBorder}">
+      <Grid>
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="Установленные программы" FontSize="22" FontWeight="Bold"/>
+       <TextBlock Grid.Row="1" TextWrapping="Wrap" Foreground="#5A6F7C" Margin="0,10,0,14"
+        Text="Список установленного ПО. Неизвестное название не означает, что программа вредоносная. Удаление только через Windows."/>
+       <DataGrid x:Name="SoftwareGrid" Grid.Row="2"/>
+       <Button x:Name="BtnAppsSettings" Grid.Row="3" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Margin="0,12,0,0"
+        Content="Открыть удаление программ"/>
+      </Grid>
+     </Border>
+    </TabItem>
+   </TabControl>
+   <Grid Grid.Row="2" Margin="0,13,0,0">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <ProgressBar x:Name="WorkProgress" Grid.Row="0" Height="4" IsIndeterminate="False" Visibility="Collapsed"
+     Foreground="#08A878" Background="#E2ECEB" Margin="0,0,0,8"/>
+    <Border Grid.Row="1" Background="#EAF0F1" CornerRadius="8" Padding="11,9">
+     <TextBlock x:Name="StatusText" Text="Подготовка" FontSize="12" TextWrapping="Wrap" Foreground="#4E6573"/>
+    </Border>
+   </Grid>
+  </Grid>
  </Grid>
 </Window>
-'@
-$reader = New-Object System.Xml.XmlNodeReader $xaml
+'@$reader = New-Object System.Xml.XmlNodeReader $xaml
 $script:window = [Windows.Markup.XamlReader]::Load($reader)
 $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnTempPreview','BtnTempClean','CleanupText',
-    'BtnScan','BtnWindowsSecurity','SecurityText','StatusText')) {
+    'BtnScan','BtnScanFull','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -252,6 +382,17 @@ function Format-TurboReport($snap) {
 function Show-TurboSnapshot($snap) {
     $script:lastSnapshot = $snap
     $script:ui['OverviewText'].Text = Format-TurboReport $snap
+    if ($null -eq $snap.Hardware) {
+        $script:ui['HealthGlyph'].Text = '!'
+        $script:ui['HealthLabel'].Text = 'Не удалось определить характеристики'
+        $script:ui['HealthNote'].Text = 'Проверьте подробный отчёт и повторите диагностику.'
+    } else {
+        $h = $snap.Hardware
+        $issues = @($snap.Recommendations)
+        $script:ui['HealthGlyph'].Text = '✓'
+        $script:ui['HealthLabel'].Text = 'Анализ компьютера готов'
+        $script:ui['HealthNote'].Text = "Модель: $($h.Manufacturer) $($h.Model). RAM: $($h.MemoryGb) ГБ. Диск: $($h.DiskType). Рекомендаций: $($issues.Count). Они приведены ниже."
+    }
     $script:ui['StartupGrid'].ItemsSource = @($snap.Startup)
     $script:ui['DriversGrid'].ItemsSource = @($snap.DriverProblems)
     $script:ui['SoftwareGrid'].ItemsSource = @($snap.Software)
@@ -275,6 +416,8 @@ function Start-TurboWorker([string]$operation, [string]$relativeFile, [string]$e
         $script:activeOp = $operation
         $script:activeResultPath = $output
         Set-TurboStatus ("Выполняется: $operation. Окно остаётся доступным.")
+        $script:ui['WorkProgress'].Visibility = 'Visible'
+        $script:ui['WorkProgress'].IsIndeterminate = $true
         $script:timer.Start()
     } catch { Show-TurboError "Не удалось запустить: $($_.Exception.Message)" }
 }
@@ -283,6 +426,8 @@ $script:timer.Interval = [TimeSpan]::FromMilliseconds(800)
 $script:timer.Add_Tick({
     if ($null -eq $script:activeProcess -or -not $script:activeProcess.HasExited) { return }
     $script:timer.Stop()
+    $script:ui['WorkProgress'].Visibility = 'Collapsed'
+    $script:ui['WorkProgress'].IsIndeterminate = $false
     $operation = $script:activeOp
     $resultPath = $script:activeResultPath
     $exitCode = $script:activeProcess.ExitCode
@@ -348,9 +493,33 @@ $script:ui['BtnTempClean'].Add_Click({
         Start-TurboWorker 'Очистка' 'Workers\Cleanup.ps1' '-Mode Cleanup'
     }
 })
+$navigation = @(
+    @('NavHome',0), @('NavSecurity',1), @('NavCleanup',2),
+    @('NavStartup',3), @('NavPerformance',4), @('NavDrivers',5), @('NavApps',6)
+)
+foreach ($pair in $navigation) {
+    $item = $pair
+    $button = $script:ui[[string]$item[0]]
+    $tabIndex = [int]$item[1]
+    $button.Tag = $tabIndex
+    $button.Add_Click({
+        param($sender,$args)
+        $script:ui['MainTabs'].SelectedIndex = [int]$sender.Tag
+    })
+}
+$script:ui['MainTabs'].SelectedIndex = 0
 $script:ui['BtnScan'].Add_Click({
     $script:ui['SecurityText'].Text = 'Запущена проверка. На старом HDD это может занять длительное время.'
     Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1'
+})
+$script:ui['BtnScanFull'].Add_Click({
+    $answer = [System.Windows.MessageBox]::Show($script:window,
+        'Полная проверка Microsoft Defender может занять часы на старом HDD. Запустить?',
+        'Полная антивирусная проверка', 'YesNo', 'Question')
+    if ($answer -eq [System.Windows.MessageBoxResult]::Yes) {
+        $script:ui['SecurityText'].Text = 'Запущена полная проверка Microsoft Defender. Ждите завершения фоновой операции.'
+        Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1' '-ScanType FullScan'
+    }
 })
 $script:ui['BtnStartupSettings'].Add_Click({ Open-TurboShell 'ms-settings:startupapps' 'taskmgr.exe' })
 $script:ui['BtnAppsSettings'].Add_Click({ Open-TurboShell 'ms-settings:appsfeatures' 'appwiz.cpl' })
