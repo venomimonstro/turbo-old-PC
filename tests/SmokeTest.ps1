@@ -33,7 +33,7 @@ Write-Host 'PASS: GUI XML and essential controls'
 foreach ($required in @('NavAudit','NavBoost','BtnDriverSearch','BtnDriverInstall',
  'DriverUpdatesGrid','BtnDriverInventory','BtnNativeScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnSecurityAudit','SecurityGrid','BtnBoostUI',
  'BtnBoostPower','BtnBoostRestore','BtnScanOffline',
- 'NavRepair','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard')) {
+ 'NavRepair','BtnDriverDownload','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard')) {
     if ($required -notin $names) { throw "Missing v0.3 dashboard control: $required" }
 }
 Write-Host 'PASS: security/driver/boost controls present'
@@ -137,6 +137,13 @@ $mainGui = Get-Content -LiteralPath (Join-Path $root 'app\TurboOldPC.ps1') -Raw 
 $builder = Get-Content -LiteralPath (Join-Path $root 'tools\Build-Portable.ps1') -Raw -Encoding UTF8
 $workerRefs = @([regex]::Matches($mainGui, "Workers\\[A-Za-z0-9]+\.ps1") |
     ForEach-Object { $_.Value } | Sort-Object -Unique)
+foreach ($requiredFile in @('app\Turbo.Scanner.psm1','data\signatures.json')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $root $requiredFile) -PathType Leaf)) {
+        throw "Missing independent scanner dependency: $requiredFile"
+    }
+    $leaf=[IO.Path]::GetFileName($requiredFile)
+    if (-not $builder.Contains($leaf)) { throw "Not packaged: $leaf" }
+}
 foreach ($relative in $workerRefs) {
     $diskPath = Join-Path (Join-Path $root 'app') $relative
     if (-not (Test-Path -LiteralPath $diskPath -PathType Leaf)) {
