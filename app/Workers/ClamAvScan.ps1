@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory=$true)][ValidateSet('Status','Scan')][string]$Mode,
+param([Parameter(Mandatory=$true)][ValidateSet('Status','Scan','Update')][string]$Mode,
 [Parameter(Mandatory=$true)][string]$OutputPath,[string]$ScanRoot)
 $ErrorActionPreference='Stop'
 try {
@@ -15,6 +15,24 @@ try {
    $code=$LASTEXITCODE
    if($code -ne 0){throw 'ClamAV не отвечает: '+($lines-join '; ')}
    $result=[pscustomobject]@{Success=$true;Mode=$Mode;Message='Найден ClamAV: '+($lines-join ' ')}
+ }elseif($Mode -eq 'Update'){
+   $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+   $principal=New-Object Security.Principal.WindowsPrincipal($identity)
+   if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+    throw 'Для обновления баз ClamAV в Program Files нужны права администратора.'
+   }
+   $updater=Join-Path (Split-Path -Parent $bin) 'freshclam.exe'
+   if(-not (Test-Path -LiteralPath $updater -PathType Leaf)){
+     throw 'В установленной папке ClamAV нет freshclam.exe. Установите официальный компонент обновления.'
+   }
+   $logs=Join-Path $env:LOCALAPPDATA 'TurboOldPC\ScanLogs'
+   [void][IO.Directory]::CreateDirectory($logs)
+   $log=Join-Path $logs ('freshclam-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.txt')
+   $lines=@(& $updater 2>&1|ForEach-Object{[string]$_})
+   $code=$LASTEXITCODE
+   $lines|Set-Content -LiteralPath $log -Encoding UTF8
+   if($code -ne 0){throw "Обновление ClamAV не завершено: код $code. Журнал: $log"}
+   $result=[pscustomobject]@{Success=$true;Mode=$Mode;LogPath=$log;Message="FreshClam завершил обновление сигнатур. Журнал: $log"}
  }else{
    if(-not $ScanRoot -or -not (Test-Path -LiteralPath $ScanRoot -PathType Container)){throw 'Папка для проверки не существует.'}
    $root=[IO.Path]::GetFullPath($ScanRoot)
