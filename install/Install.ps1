@@ -21,13 +21,14 @@ if ($processes.Count -gt 0) { throw 'Close Turbo Old PC before updating the inst
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'app'))
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'install'))
 [void][IO.Directory]::CreateDirectory((Join-Path $destination 'app\Workers'))
-foreach ($item in @('Start.cmd','README.md','LICENSE')) {
+[void][IO.Directory]::CreateDirectory((Join-Path $destination 'assets'))
+foreach ($item in @('Start.cmd','Turbo Old PC.vbs','README.md','LICENSE')) {
     $from = Join-Path $source $item
     if (Test-Path -LiteralPath $from -PathType Leaf) {
         Copy-Item -LiteralPath $from -Destination (Join-Path $destination $item) -Force -ErrorAction Stop
     }
 }
-foreach ($folder in @('app','app\Workers','install')) {
+foreach ($folder in @('app','app\Workers','install','assets')) {
     $original = Join-Path $source $folder
     $target = Join-Path $destination $folder
     foreach ($entry in @(Get-ChildItem -LiteralPath $original -File -ErrorAction Stop)) {
@@ -44,10 +45,10 @@ $shell = New-Object -ComObject WScript.Shell
 function New-TurboShortcut {
     param([string]$ShortcutPath,[string]$TargetDir)
     $link = $shell.CreateShortcut($ShortcutPath)
-    $link.TargetPath = Join-Path $TargetDir 'Start.cmd'
+    $link.TargetPath = Join-Path $TargetDir 'Turbo Old PC.vbs'
     $link.WorkingDirectory = $TargetDir
     $link.Description = 'Turbo Old PC — бесплатная диагностика, очистка и защита Windows'
-    $link.IconLocation = "$env:SystemRoot\System32\shell32.dll,167"
+    $link.IconLocation = Join-Path $TargetDir 'assets\TurboOldPC.ico'
     $link.Save()
 }
 if ($startMenu) { New-TurboShortcut -ShortcutPath (Join-Path $startMenu 'Turbo Old PC.lnk') -TargetDir $destination }
