@@ -8,6 +8,7 @@ function Get-TurboHardware {
     $diskName = 'Не удалось определить'
     $diskMedia = 'Неизвестно'
     $diskBus = 'Неизвестно'
+    $diskHealth = 'Неизвестно'
     try {
         $disk = Get-Partition -DriveLetter $driveLetter -ErrorAction Stop | Get-Disk -ErrorAction Stop | Select-Object -First 1
         if ($null -ne $disk) {
@@ -31,6 +32,12 @@ function Get-TurboHardware {
                 } catch { }
             }
             if ([string]::IsNullOrWhiteSpace($diskMedia)) { $diskMedia = 'Неизвестно' }
+            try {
+                $physical = @(Get-PhysicalDisk -ErrorAction Stop)
+                $physicalMatch = @($physical | Where-Object { ([string]$_.FriendlyName -eq [string]$disk.FriendlyName) -or ([string]$_.DeviceId -eq [string]$disk.Number) } | Select-Object -First 1)
+                if ($physicalMatch.Count -eq 0 -and $physical.Count -eq 1) { $physicalMatch = @($physical[0]) }
+                if ($physicalMatch.Count -gt 0) { $diskHealth = [string]$physicalMatch[0].HealthStatus }
+            } catch { }
         }
     } catch {
         try {
@@ -52,6 +59,7 @@ function Get-TurboHardware {
         Model = [string]$pc.Model
         CPU = [string]$cpu.Name
         Cores = [int]$cpu.NumberOfCores
+        CpuLoadPercent = if ($null -ne $cpu.LoadPercentage) { [int]$cpu.LoadPercentage } else { -1 }
         MemoryGb = [math]::Round(([double]$pc.TotalPhysicalMemory / 1GB), 1)
         FreeMemoryGb = [math]::Round(([double]$os.FreePhysicalMemory / 1MB), 1)
         Windows = [string]$os.Caption
@@ -61,6 +69,7 @@ function Get-TurboHardware {
         Disk = $diskName
         DiskType = $diskMedia
         DiskBus = $diskBus
+        DiskHealth = $diskHealth
         FreeGb = $freeGb
         TotalGb = $totalGb
     }
@@ -180,8 +189,14 @@ function Get-TurboRecommendations {
         } elseif ([string]$h.DiskType -notmatch '^SSD$') {
             $result.Add('Тип системного диска неизвестен. Уточните HDD/SSD по модели накопителя.')
         }
+        if ([string]$h.DiskHealth -match 'Warning|Unhealthy|Critical|Failed') {
+            $result.Add('ВАЖНО: подсистема хранения сообщает о проблемах с диском. Сначала сохраните резервную копию данных, затем проверьте здоровье накопителя.')
+        }
         if ([double]$h.MemoryGb -le 4) {
             $result.Add('ОЗУ 4 ГБ или меньше. Проверьте совместимость ноутбука с 8 ГБ ОЗУ.')
+        }
+        if ($h.PSObject.Properties['CpuLoadPercent'] -and [int]$h.CpuLoadPercent -ge 90) {
+            $result.Add('Процессор был загружен на 90% или больше во время диагностики. Проверьте процессы во вкладке «Производительность» и повторите проверку в простое.')
         }
         if ([double]$h.TotalGb -gt 0 -and (([double]$h.FreeGb -lt 15) -or ([double]$h.FreeGb / [double]$h.TotalGb -lt 0.10))) {
             $result.Add('На системном диске мало места. Освободите пространство без удаления личных данных.')
