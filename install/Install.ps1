@@ -106,7 +106,10 @@ try {
   New-ItemProperty -Path $regPath -Name $name -Value 1 -PropertyType DWord -Force -ErrorAction Stop|Out-Null
  }
  if($hadPrevious -and (Test-Path -LiteralPath $backup)){
-  Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction Stop
+  # Cleanup of an obsolete backup is noncritical: never roll back a working
+  # new installation because backup deletion was partial or blocked.
+  try { Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction Stop }
+  catch { Write-Warning ("Old backup could not be fully deleted: " + $backup) }
  }
  Write-Host "Installed successfully: $destination"
 } catch {
