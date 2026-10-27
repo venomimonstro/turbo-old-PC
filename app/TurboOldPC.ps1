@@ -1,4 +1,6 @@
-﻿$ErrorActionPreference = 'Stop'
+﻿[CmdletBinding()]
+param([switch]$SmokeUi)
+$ErrorActionPreference = 'Stop'
 if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne [Threading.ApartmentState]::STA) {
     throw 'Запускайте через Start.cmd (режим STA).'
 }
@@ -932,4 +934,9 @@ $script:window.Add_Closing({
     }
 })
 $script:window.Add_ContentRendered({ Start-TurboWorker 'Диагностика' 'Workers\Diagnostics.ps1' })
+if($SmokeUi){
+    Write-Host ('GUI WPF smoke passed: '+$script:ui.Count+' named controls initialized and events wired.')
+    $script:window.Close()
+    return
+}
 [void]$script:window.ShowDialog()
