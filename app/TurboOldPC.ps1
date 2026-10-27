@@ -196,6 +196,7 @@ Add-Type -AssemblyName WindowsBase
         <Button x:Name="BtnSecondOpinion" Style="{StaticResource ActionButton}" Content="Вторая проверка Microsoft"/>
         <Button x:Name="BtnNativeScan" Style="{StaticResource ActionButton}" Content="Независимая проверка папки"/>
         <Button x:Name="BtnClamScan" Style="{StaticResource ActionButton}" Content="Вторая проверка ClamAV"/>
+        <Button x:Name="BtnClamUpdate" Style="{StaticResource ActionButton}" Content="Обновить базу ClamAV"/>
         <Button x:Name="BtnDefenderUpdate" Style="{StaticResource ActionButton}" Content="Обновить базу вирусов"/>
         <Button x:Name="BtnDefenderThreats" Style="{StaticResource ActionButton}" Content="Обнаружения"/>
         <Button x:Name="BtnDefenderRemediate" Style="{StaticResource ActionButton}" Content="Обработать активные угрозы"/>
@@ -382,7 +383,7 @@ $script:ui = @{}
 foreach ($name in @('BtnAnalyze','OverviewText','BtnReport','BtnReportsFolder','StartupGrid',
     'BtnStartupSettings','DriversGrid','BtnDriversUpdate','BtnOemSupport','BtnDeviceManager',
     'SoftwareGrid','BtnAppsSettings','ProcessesGrid','ServiceGrid','BtnServices','BtnVisualEffects','BtnPowerPlan','BtnTempPreview','BtnStorageSense','BtnDiskCleanupWizard','BtnTempClean','CleanupText',
-    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnClamScan','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall','BtnCancelWorker')) {
+    'BtnScan','BtnScanFull','BtnScanOffline','BtnSecondOpinion','BtnNativeScan','BtnClamScan','BtnClamUpdate','BtnDefenderUpdate','BtnDefenderThreats','BtnDefenderRemediate','BtnWindowsSecurity','SecurityText','StatusText','HealthGlyph','HealthLabel','HealthNote','WorkProgress','MainTabs','NavHome','NavSecurity','NavCleanup','NavStartup','NavPerformance','NavDrivers','NavApps','NavAudit','NavBoost','NavRepair','BtnRepairAudit','BtnRepairDism','BtnRepairSfc','BtnRegistryAudit','BtnRestorePoints','BtnRestoreWizard','RepairText','BtnDeepAnalyze','BtnDeepClean','BtnSpaceMap','BtnSecurityAudit','BtnRansomware','BtnSecurityUpdates','SecurityGrid','BtnBoostUI','BtnBoostPower','BtnBoostRestore','BtnBoostHistory','BoostText','DriverUpdatesGrid','BtnDriverSearch','BtnDriverInventory','BtnDriverDownload','BtnDriverInstall','BtnCancelWorker')) {
     $script:ui[$name] = $script:window.FindName($name)
     if ($null -eq $script:ui[$name]) { throw "Не найден элемент окна: $name" }
 }
@@ -728,6 +729,12 @@ $script:ui['BtnScanFull'].Add_Click({
         $script:ui['SecurityText'].Text = 'Запущена полная проверка Microsoft Defender. Ждите завершения фоновой операции.'
         Start-TurboWorker 'Антивирус' 'Workers\DefenderScan.ps1' '-ScanType FullScan'
     }
+})
+$script:ui['BtnClamUpdate'].Add_Click({
+    $choice=[Windows.MessageBox]::Show($script:window,
+        'Обновить антивирусные базы отдельно установленного ClamAV через FreshClam? Может потребоваться доступ к сети и права администратора.',
+        'Обновление баз ClamAV','YesNo','Question')
+    if($choice -eq 'Yes'){Start-TurboWorker 'ClamAV' 'Workers\ClamAvScan.ps1' '-Mode Update' $true}
 })
 $script:ui['BtnClamScan'].Add_Click({
     $folder=New-Object System.Windows.Forms.FolderBrowserDialog
