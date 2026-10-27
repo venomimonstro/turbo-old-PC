@@ -14,11 +14,21 @@ if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { throw 'Bootstrap source
 [void][IO.Directory]::CreateDirectory($dist)
 [void][IO.Directory]::CreateDirectory($build)
 try {
+    # Compile the regular installed-app executable before packaging.
+    $appExe = Join-Path $dist 'TurboOldPC.exe'
+    $commonArgs = @('/nologo','/target:winexe','/platform:anycpu','/optimize+',
+        '/define:INSTALLED','/reference:System.Windows.Forms.dll',
+        '/reference:System.IO.Compression.dll','/reference:System.IO.Compression.FileSystem.dll',
+        ('/out:' + $appExe),$src)
+    & $compiler @commonArgs
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $appExe)) {
+        throw 'Could not compile installed TurboOldPC.exe.'
+    }
     $smoke = Join-Path $root 'tests\SmokeTest.ps1'
     & (Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -ExecutionPolicy Bypass -File $smoke
     if ($LASTEXITCODE -ne 0) { throw 'Smoke tests failed; EXE packaging cancelled.' }
     $package = Join-Path $dist "TurboOldPC-$Version-portable.zip"
-    & (Join-Path $root 'tools\Build-Portable.ps1') -Version $Version
+    & (Join-Path $root 'tools\Build-Portable.ps1') -Version $Version -LauncherPath $appExe
     if (-not (Test-Path -LiteralPath $package)) { throw 'ZIP build failed.' }
     # Fresh payload from the same source tree for installer AND portable EXEs.
     $references = @(
